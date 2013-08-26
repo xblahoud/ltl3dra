@@ -32,6 +32,7 @@ extern std::ofstream *automaton;
 extern char** sym_table;
 extern int sym_id;
 int from, to, tid = 0;
+extern list<bdd> det_constraints;
 
 
 extern set<cset> Z_set;
@@ -350,6 +351,49 @@ void print_ra(std::ostream &out) {
   }
 }
 
+void print_ra_ltl2dstar(std::ostream &out) {
+  set<RAstate*, RAstateComp>::iterator s_i;
+  map<RAstate*, RAtrans>::iterator t_i;
+  list<bdd>::reverse_iterator l_i;
+
+  // Header
+  out << "DRA v2 explicit" << endl;
+  out << "Created by LTL3DRA." << endl;
+  out << "States: " << drastates.size() << endl;
+  out << "Acceptance-Pairs: " << (Z_set.size()-removedConds) << endl;
+  out << "Start: " << ra_init->id << endl;
+  out << "AP: " << sym_id;
+  for (int i=0;i<sym_id;i++) out << " \"" << sym_table[i] << "\"";
+  out << endl << "---" << endl;
+
+  // States and transitions
+  for(s_i=rastates.begin(); s_i!=rastates.end(); s_i++) {
+    out << "State: " << (*s_i)->id << endl;
+    out << "Acc-Sig: ";
+    for (int l = 0; l < levels_num; l++) {
+      // Skip removed conditions
+      if (tl_dra_opt && isRemoved[l])
+        continue;
+      if((*s_i)->levels[l] == accept_levels[l])
+        out << " +" << l;
+      if ((*s_i)->levels[l] == -1)
+        out << " -" << l;
+    }
+    out << endl;
+
+    // Transitions
+    for(l_i=det_constraints.rbegin(); l_i!=det_constraints.rend(); ++l_i) {
+      // Search for appropriete transition that covers label l_i
+      for(t_i=(*s_i)->trans->begin();t_i!=(*s_i)->trans->end();t_i++) {
+        if ((*l_i >> t_i->second.label)==bdd_true()) {
+          out << t_i->second.to->id << endl;
+          break;
+        }
+      }
+    }
+  }
+}
+
 void printGoalTrans(std::ostream &out) {
 out << "\t\t<Transition tid=\"" << tid++ << "\">" << endl;
 out << "\t\t\t<From>" << from << "</From>" << endl;
@@ -610,8 +654,8 @@ void mk_ra()
   }
 
 //  if (!tl_dra_stats) {
-  fprintf(tl_out, "\nRA automaton\n");
-  print_ra(cout);
+//  fprintf(tl_out, "\nRA automaton\n");
+  print_ra_ltl2dstar(cout);
 //  }
 
   if(tl_dra_goal) {
@@ -622,12 +666,12 @@ void mk_ra()
 //  cout << rastates.size() << "(" << (Z_set.size()-removedConds) << ") & " << drastates.size() << " \\\\ \\hline " << endl;
   }
 
-  if(!tl_dra_stats && !tl_verbose) {
-  cout << endl << "-----------------------------------" << endl << endl;
-  cout << "Acceptance-Pairs: " << (Z_set.size()-removedConds) << endl;
-  cout << "States: " << rastates.size() << endl;
-  cout << "States of generalized automaton: " << drastates.size() << endl;
-  }
+//  if(!tl_dra_stats && !tl_verbose) {
+//  cout << endl << "-----------------------------------" << endl << endl;
+//  cout << "Acceptance-Pairs: " << (Z_set.size()-removedConds) << endl;
+//  cout << "States: " << rastates.size() << endl;
+//  cout << "States of generalized automaton: " << drastates.size() << endl;
+//  }
 
   if(tl_dra_stats || tl_verbose) {
     cout << endl << "-----------------------------------" << endl << endl;

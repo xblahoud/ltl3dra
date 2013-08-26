@@ -164,9 +164,9 @@ usage(int estatus)
         printf(" -X\t\tdisable use modified construction of VWAA (use GXF, FXG instead of GF and FG)\n");
         printf(" -O\t\tdisable optimize accepting sets of TGDRA\n");
         printf(" -I\t\tdisable use improved allowed transitions of TGDRA\n");
-        printf(" -N\t\tuse configuration dominance in TGDRA construction\n");
+        printf(" -N\t\tuse configuration dominance in TGDRA construction\n (experimental, not always correct)");
         printf(" -G file\tWrites goal output into given file \n");
-        printf(" -t\t\tprints only statistics about TGDRA and DRA");
+        printf(" -t\t\tprints only statistics about TGDRA and DRA \n");
 #endif
 
         alldone(estatus);

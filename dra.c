@@ -546,7 +546,8 @@ list<bdd> prepare_det_constraints() {
   list<bdd>::iterator j;
   l_1.push_back(bdd_true());
   
-  for(i=0; i<sym_id; i++) {
+//  for(i=0; i<sym_id; i++) { CHANGE of order due to ltl2dstar output
+  for(i=sym_id-1; i>=0; i--) {
     a = bdd_ithvar(i);
     for(j=l_1.begin(); j!=l_1.end(); j++) {
       l_2.push_back(*j&a);
