@@ -68,6 +68,9 @@ extern vector<cset> removedI_sets;
 extern vector<bool> isRemoved;
 extern int removedConds;
 
+map<int,RAstate*> dstarMap;
+map<int,int> id2dstar;
+
 list<RAstate*> init_copies;
 
 /********************************************************************\
@@ -360,22 +363,64 @@ void print_ra(std::ostream &out) {
   }
 }
 
+
+void new_state(int dstarid,RAstate* state) {
+  dstarMap.insert(pair<int,RAstate*>(dstarid,state));
+  id2dstar.insert(pair<int,int>(state->id,dstarid));
+}
+
 void print_ra_ltl2dstar(std::ostream &out) {
   set<RAstate*, RAstateComp>::iterator s_i;
   map<RAstate*, RAtrans>::iterator t_i;
+
   list<bdd>::reverse_iterator l_i;
+  int id=0;
+  int current_id=0;
+
+
+  new_state(id++,ra_init);
 
   // Header
   out << "DRA v2 explicit" << endl;
-  out << "Created by LTL3DRA." << endl;
+  out << "Comment: \"Created by LTL3DRA v.0.1.\"" << endl;
   out << "States: " << drastates.size() << endl;
   out << "Acceptance-Pairs: " << (Z_set.size()-removedConds) << endl;
-  out << "Start: " << ra_init->id << endl;
+  out << "Start: 0" << endl;
   out << "AP: " << sym_id;
   for (int i=0;i<sym_id;i++) out << " \"" << sym_table[i] << "\"";
   out << endl << "---" << endl;
 
-  // States and transitions
+  while (dstarMap[current_id]) {
+      out << "State: " << current_id << endl;
+      out << "Acc-Sig: ";
+      for (int l = 0; l < levels_num; l++) {
+        // Skip removed conditions
+        if (tl_dra_opt && isRemoved[l])
+          continue;
+        if(dstarMap[current_id]->levels[l] == accept_levels[l])
+          out << " +" << l;
+        if (dstarMap[current_id]->levels[l] == -1)
+          out << " -" << l;
+      }
+      out << endl;
+
+      // Transitions
+      for(l_i=det_constraints.rbegin(); l_i!=det_constraints.rend(); ++l_i) {
+        // Search for appropriete transition that covers label l_i
+        for(t_i=dstarMap[current_id]->trans->begin();t_i!=dstarMap[current_id]->trans->end();t_i++) {
+          if ((*l_i >> t_i->second.label)==bdd_true()) {
+              if (id2dstar.find(t_i->second.to->id) == id2dstar.end()) {
+                 new_state(id++,t_i->second.to);
+              }
+            out << id2dstar[t_i->second.to->id] << endl;
+            break;
+          }
+        }
+      }
+      current_id++;
+  }
+
+  /*// States and transitions
   for(s_i=rastates.begin(); s_i!=rastates.end(); s_i++) {
     out << "State: " << (*s_i)->id << endl;
     out << "Acc-Sig: ";
@@ -400,7 +445,7 @@ void print_ra_ltl2dstar(std::ostream &out) {
         }
       }
     }
-  }
+  }*/
 }
 
 void printGoalTrans(std::ostream &out) {
