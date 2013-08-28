@@ -1,4 +1,4 @@
-/***** ltl3ba : alternating.c *****/
+/***** ltl3dra : alternating.c *****/
 
 /* Written by Denis Oddoux, LIAFA, France                                 */
 /* Copyright (c) 2001  Denis Oddoux                                       */
@@ -6,6 +6,8 @@
 /* Copyright (c) 2007  Paul Gastin                                        */
 /* Modified by Tomas Babiak, FI MU, Brno, Czech Republic                  */
 /* Copyright (c) 2012  Tomas Babiak                                       */
+/* Modified by Tomas Babiak and Frantisek Blahoudek, Brno, Czech Republic */
+/* Copyright (c) 2013  Tomas Babiak and Frantisek Blahoudek               */
 /*                                                                        */
 /* This program is free software; you can redistribute it and/or modify   */
 /* it under the terms of the GNU General Public License as published by   */
@@ -26,12 +28,18 @@
 /* Verification, CAV 2001, Paris, France.                                 */
 /* Proceedings - LNCS 2102, pp. 53-65                                     */
 /*                                                                        */
-/* Modifications based on paper by                                        */
+/* and on paper by                                                        */
 /* T. Babiak, M. Kretinsky, V. Rehak, and J. Strejcek,                    */
 /* LTL to Buchi Automata Translation: Fast and More Deterministic         */
 /* presented at the 18th International Conference on Tools and            */
 /* Algorithms for the Construction and Analysis of Systems (TACAS 2012)   */
 /*                                                                        */
+/* The translation to deterministic Rabin automata is based on paper by   */
+/* T. Babiak, F. Blahoudek, M. Kretinsky, and J. Strejcek                 */
+/* Effective Translation of LTL to Deterministic Rabin Automata:          */
+/* Beyond the (F,G)-Fragment (2013)                                       */
+/* In 11th International Symposium on Automated Technology for            */
+/* Verification and Analysis (ATVA 2013)                                  */
 
 #include "ltl3dra.h"
 #include <bdd.h>
@@ -55,10 +63,7 @@ extern int tl_verbose, tl_stats, tl_simp_diff, tl_alt, tl_determinize, tl_det_m,
 Node **label;
 char **sym_table;
 map<cset, ATrans*> **transition;
-#ifdef STATS
-struct rusage tr_debut, tr_fin;
-struct timeval t_diff;
-#endif
+
 int *final_set, node_id = 1, sym_id = 0, node_size, sym_size, nodes_num;
 int astate_count = 0, atrans_count = 0;
 
@@ -307,7 +312,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
     if (tl_dra_alt && is_F(p) && is_Gconj(p->rgt)) {
       rgt = build_alternating(p->rgt);
       if (!rgt || rgt->size() != 1) {
-        printf("ltl3ba: unexpected/unsound result during WVAA creation", tl_out);
+        printf("ltl3dra: unexpected/unsound result during WVAA creation", tl_out);
         free_atrans_map(rgt);
         bdd_done();
         exit(5);
@@ -403,7 +408,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
     if (tl_dra_alt && is_G(p) && is_Fconj(p->rgt)) {
       map<cset, ATrans*>* temp = boolean(p->rgt);
       if (temp->size() != 1) {
-        printf("ltl3ba: unexpected/unsound result during WVAA creation", tl_out);
+        printf("ltl3dra: unexpected/unsound result during WVAA creation", tl_out);
         free_atrans_map(temp);
         bdd_done();
         exit(5);
@@ -1071,9 +1076,6 @@ void oteckuj(int nodes_num) {
 
 void mk_alternating(Node *p) /* generates an alternating automaton for p */
 {
-#ifdef STATS
-  if(tl_stats) getrusage(RUSAGE_SELF, &tr_debut);
-#endif
 
   node_size = calculate_node_size(p) + 1; /* number of states in the automaton */
   label = (Node **) tl_emalloc(node_size * sizeof(Node *));
@@ -1144,16 +1146,6 @@ void mk_alternating(Node *p) /* generates an alternating automaton for p */
   }
   printf("\n");*/
  
-#ifdef STATS
-  if(tl_stats) {
-    getrusage(RUSAGE_SELF, &tr_fin);
-    timeval_subtract (&t_diff, &tr_fin.ru_utime, &tr_debut.ru_utime);
-    fprintf(tl_out, "\nBuilding and simplification of the alternating automaton: %li.%06lis",
-		t_diff.tv_sec, t_diff.tv_usec);
-    fprintf(tl_out, "\n%i states, %i transitions\n", astate_count, atrans_count);
-  }
-#endif
-
   if(tl_dra_out)
     Z_set = compute_Z_set();
 

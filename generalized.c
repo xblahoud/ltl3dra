@@ -1,4 +1,4 @@
-/***** ltl3ba : generalized.c *****/
+/***** ltl3dra : generalized.c *****/
 
 /* Written by Denis Oddoux, LIAFA, France                                 */
 /* Copyright (c) 2001  Denis Oddoux                                       */
@@ -6,6 +6,8 @@
 /* Copyright (c) 2007  Paul Gastin                                        */
 /* Modified by Tomas Babiak, FI MU, Brno, Czech Republic                  */
 /* Copyright (c) 2012  Tomas Babiak                                       */
+/* Modified by Tomas Babiak and Frantisek Blahoudek, Brno, Czech Republic */
+/* Copyright (c) 2013  Tomas Babiak and Frantisek Blahoudek               */
 /*                                                                        */
 /* This program is free software; you can redistribute it and/or modify   */
 /* it under the terms of the GNU General Public License as published by   */
@@ -26,12 +28,18 @@
 /* Verification, CAV 2001, Paris, France.                                 */
 /* Proceedings - LNCS 2102, pp. 53-65                                     */
 /*                                                                        */
-/* Modifications based on paper by                                        */
+/* and on paper by                                                        */
 /* T. Babiak, M. Kretinsky, V. Rehak, and J. Strejcek,                    */
 /* LTL to Buchi Automata Translation: Fast and More Deterministic         */
 /* presented at the 18th International Conference on Tools and            */
 /* Algorithms for the Construction and Analysis of Systems (TACAS 2012)   */
 /*                                                                        */
+/* The translation to deterministic Rabin automata is based on paper by   */
+/* T. Babiak, F. Blahoudek, M. Kretinsky, and J. Strejcek                 */
+/* Effective Translation of LTL to Deterministic Rabin Automata:          */
+/* Beyond the (F,G)-Fragment (2013)                                       */
+/* In 11th International Symposium on Automated Technology for            */
+/* Verification and Analysis (ATVA 2013)                                  */
 
 #include "ltl3dra.h"
 #include <bdd.h>
@@ -54,10 +62,7 @@ using namespace std;
 
 extern FILE *tl_out;
 extern map<cset, ATrans*> **transition;
-#ifdef STATS
-extern struct rusage tr_debut, tr_fin;
-extern struct timeval t_diff;
-#endif
+
 extern int tl_verbose, tl_stats, tl_simp_diff, tl_simp_fly, tl_fjtofj, tl_ltl3ba,
   tl_simp_scc, *final_set, node_id, tl_postpone, tl_f_components, tl_rem_scc, node_size,
   tl_det_m, print_or, tl_tgba_out;
@@ -273,10 +278,6 @@ int simplify_gtrans() /* simplifies the transitions */
   map<cset, bdd>::iterator gt1, gt2, gx;
   map<cset, bdd>::reverse_iterator rt1, rt2, rx;
 
-#ifdef STATS
-  if(tl_stats) getrusage(RUSAGE_SELF, &tr_debut);
-#endif
-
   for(s = gstates->nxt; s != gstates; s = s->nxt) {
     if (!tl_f_components || !included_set(s->nodes_set->get_set(), GFcomp_nodes, 0)) {
       t = s->trans->begin();
@@ -314,17 +315,6 @@ int simplify_gtrans() /* simplifies the transitions */
       }
     }
   }
-
-#ifdef STATS  
-  if(tl_stats) {
-    getrusage(RUSAGE_SELF, &tr_fin);
-    timeval_subtract (&t_diff, &tr_fin.ru_utime, &tr_debut.ru_utime);
-    fprintf(tl_out, "\nSimplification of the generalized Buchi automaton - transitions: %li.%06lis",
-    t_diff.tv_sec, t_diff.tv_usec);
-    fprintf(tl_out, "\n%i transitions removed\n", changed);
-  }
-#endif
-
   return changed;
 }
 
@@ -431,10 +421,6 @@ int simplify_gstates() /* eliminates redundant states */
   int changed = 0;
   GState *a, *b;
 
-#ifdef STATS
-  if(tl_stats) getrusage(RUSAGE_SELF, &tr_debut);
-#endif
-
   for(a = gstates->nxt; a != gstates; a = a->nxt) {
     if(a->trans->empty()) { /* a has no transitions */
       a = remove_gstate(a, (GState *)0);
@@ -459,17 +445,6 @@ int simplify_gstates() /* eliminates redundant states */
     }
   }
   retarget_all_gtrans();
-
-#ifdef STATS
-  if(tl_stats) {
-    getrusage(RUSAGE_SELF, &tr_fin);
-    timeval_subtract (&t_diff, &tr_fin.ru_utime, &tr_debut.ru_utime);
-    fprintf(tl_out, "\nSimplification of the generalized Buchi automaton - states: %li.%06lis",
-                t_diff.tv_sec, t_diff.tv_usec);
-    fprintf(tl_out, "\n%i states removed\n", changed);
-  }
-#endif
-
   return changed;
 }
 
@@ -1116,10 +1091,6 @@ void mk_generalized()
   GState *s;
   int i;
 
-#ifdef STATS
-  if(tl_stats) getrusage(RUSAGE_SELF, &tr_debut);
-#endif
-
   fin = new cset(0);
   bad_scc = 0; /* will be initialized in simplify_gscc */
   final = list_set(final_set, 0);
@@ -1185,16 +1156,6 @@ void mk_generalized()
 
 #ifdef DICT
   gsDict.clear();
-#endif
-
-#ifdef STATS
-  if(tl_stats) {
-    getrusage(RUSAGE_SELF, &tr_fin);
-    timeval_subtract (&t_diff, &tr_fin.ru_utime, &tr_debut.ru_utime);
-    fprintf(tl_out, "\nBuilding the generalized Buchi automaton : %li.%06lis",
-    t_diff.tv_sec, t_diff.tv_usec);
-    fprintf(tl_out, "\n%i states, %i transitions\n", gstate_count, gtrans_count);
-  }
 #endif
 
   tfree(gstack);

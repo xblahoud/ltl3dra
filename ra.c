@@ -1,4 +1,13 @@
-/***** ltl3ba : ra.c *****/
+/***** ltl3dra : ra.c *****/
+
+/* Written by Tomas Babiak and Frantisek Blahoudek                        */
+/*                                                                        */
+/* Based on paper by                                                      */
+/* T. Babiak, F. Blahoudek, M. Kretinsky, and J. Strejcek                 */
+/* Effective Translation of LTL to Deterministic Rabin Automata:          */
+/* Beyond the (F,G)-Fragment (2013)                                       */
+/* In 11th International Symposium on Automated Technology for            */
+/* Verification and Analysis (ATVA 2013)                                  */
 
 #include <fstream>
 #include <queue>
@@ -644,8 +653,9 @@ void mk_ra()
   remove_redundant_ra_init();
   
   if (tl_verbose && tl_simp_diff && !tl_dra_stats) {
-    fprintf(tl_out, "\nRA automaton before optimization\n");
+    fprintf(tl_out, "\nDRA automaton before optimization\n");
     print_ra(cout);
+    fprintf(tl_out, "\n\nDRA automaton after optimization\n");
   }
   
   if(tl_simp_diff) {

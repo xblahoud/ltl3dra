@@ -1,4 +1,4 @@
-/***** ltl3ba : queue.c *****/
+/***** ltl3dra : queue.c *****/
 
 /* Written by Tomas Babiak, FI MU, Brno, Czech Republic                   */
 /* Copyright (c) 2012  Tomas Babiak                                       */

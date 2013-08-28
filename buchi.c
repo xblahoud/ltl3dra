@@ -1,4 +1,4 @@
-/***** ltl3ba : buchi.c *****/
+/***** ltl3dra : buchi.c *****/
 
 /* Written by Denis Oddoux, LIAFA, France                                 */
 /* Copyright (c) 2001  Denis Oddoux                                       */
@@ -6,6 +6,8 @@
 /* Copyright (c) 2007  Paul Gastin                                        */
 /* Modified by Tomas Babiak, FI MU, Brno, Czech Republic                  */
 /* Copyright (c) 2012  Tomas Babiak                                       */
+/* Modified by Tomas Babiak and Frantisek Blahoudek, Brno, Czech Republic */
+/* Copyright (c) 2013  Tomas Babiak and Frantisek Blahoudek               */
 /*                                                                        */
 /* This program is free software; you can redistribute it and/or modify   */
 /* it under the terms of the GNU General Public License as published by   */
@@ -26,12 +28,18 @@
 /* Verification, CAV 2001, Paris, France.                                 */
 /* Proceedings - LNCS 2102, pp. 53-65                                     */
 /*                                                                        */
-/* Modifications based on paper by                                        */
+/* and on paper by                                                        */
 /* T. Babiak, M. Kretinsky, V. Rehak, and J. Strejcek,                    */
 /* LTL to Buchi Automata Translation: Fast and More Deterministic         */
 /* presented at the 18th International Conference on Tools and            */
 /* Algorithms for the Construction and Analysis of Systems (TACAS 2012)   */
 /*                                                                        */
+/* The translation to deterministic Rabin automata is based on paper by   */
+/* T. Babiak, F. Blahoudek, M. Kretinsky, and J. Strejcek                 */
+/* Effective Translation of LTL to Deterministic Rabin Automata:          */
+/* Beyond the (F,G)-Fragment (2013)                                       */
+/* In 11th International Symposium on Automated Technology for            */
+/* Verification and Analysis (ATVA 2013)                                  */
 
 #include "ltl3dra.h"
 #include <bdd.h>
@@ -50,10 +58,7 @@ using namespace std;
 \********************************************************************/
 
 extern GState **init, *gstates;
-#ifdef STATS
-extern struct rusage tr_debut, tr_fin;
-extern struct timeval t_diff;
-#endif
+
 extern int tl_verbose, tl_stats, tl_simp_diff, tl_simp_fly, tl_simp_scc, tl_ltl3ba,
   tl_bisim, tl_bisim_r, tl_sim, tl_sim_r, init_size, *final, tl_ba_out;
 extern void put_uform(void);
@@ -195,10 +200,6 @@ int simplify_bstates() /* eliminates redundant states */
   BState *s, *s1, *s2;
   int changed = 0;
 
-#ifdef STATS
-  if(tl_stats) getrusage(RUSAGE_SELF, &tr_debut);
-#endif
-
   for (s = bstates->nxt; s != bstates; s = s->nxt) {
     if(s->trans->empty()) { /* s has no transitions */
       s = remove_bstate(s, (BState *)0);
@@ -228,17 +229,6 @@ int simplify_bstates() /* eliminates redundant states */
       }
     }
   }
-
-#ifdef STATS
-  if(tl_stats) {
-    getrusage(RUSAGE_SELF, &tr_fin);
-    timeval_subtract (&t_diff, &tr_fin.ru_utime, &tr_debut.ru_utime);
-    fprintf(tl_out, "\nSimplification of the Buchi automaton - states: %li.%06lis",
-                t_diff.tv_sec, t_diff.tv_usec);
-    fprintf(tl_out, "\n%i states removed\n", changed);
-  }
-#endif
-
   return changed;
 }
 
@@ -1159,10 +1149,6 @@ void mk_buchi()
   }
 #endif
   
-#ifdef STATS
-  if(tl_stats) getrusage(RUSAGE_SELF, &tr_debut);
-#endif
-
   bstack        = (BState *)tl_emalloc(sizeof(BState)); /* sentinel */
   bstack->nxt   = bstack;
   bremoved      = (BState *)tl_emalloc(sizeof(BState)); /* sentinel */
@@ -1235,16 +1221,6 @@ void mk_buchi()
     delete bsDict[i];
   }
   tfree(bsDict);
-#endif
-
-#ifdef STATS
-  if(tl_stats) {
-    getrusage(RUSAGE_SELF, &tr_fin);
-    timeval_subtract (&t_diff, &tr_fin.ru_utime, &tr_debut.ru_utime);
-    fprintf(tl_out, "\nBuilding the Buchi automaton : %li.%06lis",
-                t_diff.tv_sec, t_diff.tv_usec);
-    fprintf(tl_out, "\n%i states, %i transitions\n", bstate_count, btrans_count);
-  }
 #endif
 
   if(tl_verbose) {

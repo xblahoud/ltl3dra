@@ -1,8 +1,8 @@
 1. LICENSE
 
-LTL3BA - Version 1.0 - March 2012
-Written by Tomas Babiak, FI MU, Brno, Czech Republic                          
-Copyright (c) 2012  Tomas Babiak
+LTL3DRA - Version 0.1 - August 2013
+Written by Tomas Babiak and Frantisek Blahoudek, FI MU, Brno, Czech Republic                          
+Copyright (c) 2013  Tomas Babiak and Frantisek Blahoudek
 
 Based on: 
 
@@ -14,6 +14,11 @@ LTL2BA - Version 1.1 - August 2007
 Modified by Paul Gastin, LSV, France                                 
 Copyright (c) 2007  Paul Gastin                                       
 Available at http://www.lsv.ens-cachan.fr/~gastin/ltl2ba
+
+LTL3BA - Version 1.0 - March 2012
+Copyright (c) 2013  Tomas Babiak
+Available at https://sourceforge.net/projects/ltl3ba/
+
                                                                   
 This program is free software; you can redistribute it and/or modify   
 it under the terms of the GNU General Public License as published by   
@@ -30,9 +35,16 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software            
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-The LTL3BA software is based on LTL2BA - Version 1.1.
-Modifications are based on the paper presented at TACAS 2012:
-  T. Babiak, M. Kretinsky, V. Rehak, and J. Strejcek
+The algorithms used in LTL3DRA are described in:
+  T. Babiak, F. Blahoudek, M. Kretinsky, and J. Strejcek
+  "Effective Translation of LTL to Deterministic Rabin Automata:
+     Beyond the (F,G)-Fragment (2013)"
+  In 11th International Symposium on Automated Technology 
+    for Verification and Analysis (ATVA 2013)
+
+The LTL3BA software was written by Tomas Babiak and the algorithms are
+  described in:
+  T. Babiak, M. Kretinsky, F. Rehak, and J. Strejcek
   "LTL to Buchi Automata Translation: Fast and More Deterministic"
   In 18th International Conference on Tools and Algorithms for the
   Construction and Analysis of Systems (TACAS 2012)
@@ -63,16 +75,16 @@ Here are the files that contain some code from Spin v3.4.1 :
 
 2. REQUIREMENTS
 
-LTL3BA needs BuDDy (Binary Decision Diagram) library.
+LTL3DRA needs BuDDy (Binary Decision Diagram) library.
 BuDDy is available at http://sourceforge.net/projects/buddy/
-LTL3BA was tested with BuDDy version 2.4
+LTL3DRA was tested with BuDDy version 2.4
 
 3. COMPILING
 
 open the archive :
-> gunzip ltl3ba-1.0.tar.gz
-> tar xf ltl3ba-1.0.tar
-> cd ltl3ba-1.0
+> gunzip ltl3dra-0.1.tar.gz
+> tar xf ltl3dra-0.1.tar
+> cd ltl3dra-0.1
 
 Edit Makefile and set paths to BuDDy's files "bdd.h" and "libbdd.a".
 (Edit BUDDY_INCLUDE and BUDDY_LIB)
@@ -83,7 +95,7 @@ compile the program
 3. EXECUTING
 
 run the program
-> ./ltl3ba -f "formula"
+> ./ltl3dra -f "formula"
 
 The formula is an LTL formula, and may contain propositional symbols, 
 boolean operators, temporal operators, and parentheses.
@@ -109,10 +121,13 @@ Temporal operators:
 
 Use spaces between any symbols.
 
-The result is a never claim in Promela that can be given to the
-Spin model checker to verify properties on a system.
+The result is a DRA in ltl2dstar format v2.
 
 run the command
-> ./ltl3ba
+> ./ltl3dra
 to see the possible options for executing the program
+
+4. BUGS
+
+Please send bug-reports to xblahoud@fi.muni.cz
 

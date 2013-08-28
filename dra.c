@@ -1,4 +1,13 @@
-/***** ltl3ba : dra.c *****/
+/***** ltl3dra : dra.c *****/
+
+/* Written by Tomas Babiak and Frantisek Blahoudek                        */
+/*                                                                        */
+/* Based on paper by                                                      */
+/* T. Babiak, F. Blahoudek, M. Kretinsky, and J. Strejcek                 */
+/* Effective Translation of LTL to Deterministic Rabin Automata:          */
+/* Beyond the (F,G)-Fragment (2013)                                       */
+/* In 11th International Symposium on Automated Technology for            */
+/* Verification and Analysis (ATVA 2013)                                  */
 
 #include <queue>
 /*#include "ltl3dra.h"*/
@@ -27,10 +36,7 @@ using namespace dra;
 
 extern FILE *tl_out;
 extern map<cset, ATrans*> **transition;
-#ifdef STATS
-extern struct rusage tr_debut, tr_fin;
-extern struct timeval t_diff;
-#endif
+
 //extern int tl_simp_fly, tl_ltl3ba, tl_f_components, compute_directly;
 extern int tl_verbose, tl_fjtofj, print_or, sym_id, *final_set, *final,
   *must_nodes, *may_nodes, **predecessors, tl_dra_opt, tl_dra_acc_imp, tl_simp_diff,
@@ -1259,7 +1265,7 @@ void mk_dra() {
 
 
   if (tl_verbose && (tl_dra_opt || tl_simp_diff)) {
-    fprintf(tl_out, "\nDRA automaton before optimization\n");
+    fprintf(tl_out, "\nTGDRA automaton before optimization\n");
     print_dra(cout);
   }
 
@@ -1293,7 +1299,7 @@ void mk_dra() {
   }
 
   if (tl_verbose) {
-    fprintf(tl_out, "\nDRA automaton\n");
+    fprintf(tl_out, "\nTGDRA automaton\n");
     print_dra(cout);
   }
 }

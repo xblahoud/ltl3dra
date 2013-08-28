@@ -1,11 +1,13 @@
-# LTL3BA - Version 1.0.2 - December 2012
+# LTL3DRA - Version 0.1 - August 2013
 
 # Written by Denis Oddoux, LIAFA, France                                 
 # Copyright (c) 2001  Denis Oddoux                                       
 # Modified by Paul Gastin, LSV, France                                   
 # Copyright (c) 2007  Paul Gastin                                        
 # Modified by Tomas Babiak, FI MU, Brno, Czech Republic                  
-# Copyright (c) 2012  Tomas Babiak                                       
+# Copyright (c) 2012  Tomas Babiak   
+# Modified by Tomas Babiak and Frantisek Blahoudek, Brno, Czech Republic
+# Copyright (c) 2013  Tomas Babiak and Frantisek Blahoudek                                   
 #                                                                        
 # This program is free software; you can redistribute it and/or modify   
 # it under the terms of the GNU General Public License as published by   
@@ -26,19 +28,21 @@
 # Verification, CAV 2001, Paris, France.                                 
 # Proceedings - LNCS 2102, pp. 53-65                                     
 #                                                                        
-# Modifications based on paper by                                        
+# and on paper by                                        
 # T. Babiak, M. Kretinsky, V. Rehak, and J. Strejcek,                    
 # LTL to Buchi Automata Translation: Fast and More Deterministic         
 # presented at the 18th International Conference on Tools and            
 # Algorithms for the Construction and Analysis of Systems (TACAS 2012)   
+#
+# The translation to deterministic Rabin automata is based on paper by
+# T. Babiak, F. Blahoudek, M. Kretinsky, and J. Strejcek
+# Effective Translation of LTL to Deterministic Rabin Automata: Beyond the (F,G)-Fragment (2013)
+# In 11th International Symposium on Automated Technology for Verification and Analysis (ATVA 2013)
 
 # Set PATH to "bdd.h" BuDDy file.
-#BUDDY_INCLUDE=~/Research/Tools/spot-1.0/buddy/src/
 BUDDY_INCLUDE=../buddy/src/
 # Set PATH to "libbdd.a" BuDDy file.
 BUDDY_LIB=../buddy/src/.libs/
-#BUDDY_LIB=~/Research/Tools/spot-1.0/buddy/src/.libs
-
 
 # to obtain BuDDy run:
 # $ cd some_directory
@@ -56,17 +60,17 @@ BUDDY_LIB=../buddy/src/.libs/
 
 CC=g++
 CXX=g++
-CPPFLAGS= -O3 -DNXT -I$(BUDDY_INCLUDE) -DDRA
+CPPFLAGS= -O3 -DNXT -I$(BUDDY_INCLUDE)
 
-LTL3BA=	parse.o lex.o main.o trans.o buchi.o cset.o set.o dra.o ra.o\
+LTL3DRA=	parse.o lex.o main.o trans.o buchi.o cset.o set.o dra.o ra.o\
 	mem.o rewrt.o cache.o alternating.o generalized.o optim.o queue.o
 
-all: ltl3ba
+all: ltl3dra
 
-ltl3ba:	$(LTL3BA)
-	$(CXX) $(CPPFLAGS) -o ltl3dra $(LTL3BA) -L$(BUDDY_LIB) -lbdd
+ltl3dra:$(LTL3DRA)
+	$(CXX) $(CPPFLAGS) -o ltl3dra $(LTL3DRA) -L$(BUDDY_LIB) -lbdd
 
-$(LTL3BA): ltl3dra.h dra.h ra.h
+$(LTL3DRA): ltl3dra.h dra.h ra.h
 
 clean:
 	rm -f ltl3dra *.o

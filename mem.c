@@ -1,4 +1,4 @@
-/***** ltl3ba : mem.c *****/
+/***** ltl3dra : mem.c *****/
 
 /* Written by Denis Oddoux, LIAFA, France                                 */
 /* Copyright (c) 2001  Denis Oddoux                                       */

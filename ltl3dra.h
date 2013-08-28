@@ -1,4 +1,4 @@
-/***** ltl3ba : ltl3ba.h *****/
+/***** ltl3dra : ltl3dra.h *****/
 
 /* Written by Denis Oddoux, LIAFA, France                                 */
 /* Copyright (c) 2001  Denis Oddoux                                       */
@@ -40,17 +40,9 @@
 #include <bdd.h>
 #include <map>
 
-/* Set LTL3BA's version number */
-#define VERSION_NUM "1.0.2 - updated (future 1.1)"
-
-/* Defines, whether to gather statistics.                                  */
-/* Statistics are not relevant since ltl3ba upgrade, so they are disabled. */
-/* Some tweeeks are necessary in order to gather relevant data again.      */
-//#define STATS
-#ifdef STATS
-#include <sys/time.h>
-#include <sys/resource.h>
-#endif
+/* Set LTL3DRA's version number */
+#define VERSION_NUM "0.1"
+#define DRA
 
 class cset;
 class cGTrans;
@@ -208,9 +200,6 @@ GTrans  *emalloc_gtrans();
 void    free_gtrans(GTrans *, GTrans *, int);
 //BTrans  *emalloc_btrans();
 //void    free_btrans(BTrans *, BTrans *, int);
-#ifdef STATS
-void	a_stats(void);
-#endif
 void	addtrans(Graph *, char *, Node *, char *);
 void	cache_stats(void);
 void	dump(Node *);
@@ -263,10 +252,6 @@ int  size_set(int *, int);
 int  *list_set(int *, int);
 void substract_set(int *, int *, int *);
 int compare_sets_lexi(int *, int *, int);
-
-#ifdef STATS
-int timeval_subtract (struct timeval *, struct timeval *, struct timeval *);
-#endif
 
 typedef struct Queue {
   int max;

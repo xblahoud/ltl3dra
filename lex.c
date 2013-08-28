@@ -1,4 +1,4 @@
-/***** ltl3ba : lex.c *****/
+/***** ltl3dra : lex.c *****/
 
 /* Written by Denis Oddoux, LIAFA, France                                 */
 /* Copyright (c) 2001  Denis Oddoux                                       */

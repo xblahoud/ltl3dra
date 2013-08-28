@@ -1,4 +1,4 @@
-/***** ltl3ba : trans.c *****/
+/***** ltl3dra : trans.c *****/
 
 /* Written by Denis Oddoux, LIAFA, France                                 */
 /* Copyright (c) 2001  Denis Oddoux                                       */
@@ -6,6 +6,8 @@
 /* Copyright (c) 2007  Paul Gastin                                        */
 /* Modified by Tomas Babiak, FI MU, Brno, Czech Republic                  */
 /* Copyright (c) 2012  Tomas Babiak                                       */
+/* Modified by Tomas Babiak and Frantisek Blahoudek, Brno, Czech Republic */
+/* Copyright (c) 2013  Tomas Babiak and Frantisek Blahoudek               */
 /*                                                                        */
 /* This program is free software; you can redistribute it and/or modify   */
 /* it under the terms of the GNU General Public License as published by   */
@@ -26,12 +28,18 @@
 /* Verification, CAV 2001, Paris, France.                                 */
 /* Proceedings - LNCS 2102, pp. 53-65                                     */
 /*                                                                        */
-/* Modifications based on paper by                                        */
+/* and on paper by                                                        */
 /* T. Babiak, M. Kretinsky, V. Rehak, and J. Strejcek,                    */
 /* LTL to Buchi Automata Translation: Fast and More Deterministic         */
 /* presented at the 18th International Conference on Tools and            */
 /* Algorithms for the Construction and Analysis of Systems (TACAS 2012)   */
 /*                                                                        */
+/* The translation to deterministic Rabin automata is based on paper by   */
+/* T. Babiak, F. Blahoudek, M. Kretinsky, and J. Strejcek                 */
+/* Effective Translation of LTL to Deterministic Rabin Automata:          */
+/* Beyond the (F,G)-Fragment (2013)                                       */
+/* In 11th International Symposium on Automated Technology for            */
+/* Verification and Analysis (ATVA 2013)                                  */
 
 #include "ltl3dra.h"
 #include <bdd.h>

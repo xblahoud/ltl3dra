@@ -1,4 +1,4 @@
-/***** ltl3ba : rewrt.c *****/
+/***** ltl3dra : rewrt.c *****/
 
 /* Written by Denis Oddoux, LIAFA, France                                 */
 /* Copyright (c) 2001  Denis Oddoux                                       */

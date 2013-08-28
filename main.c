@@ -1,4 +1,4 @@
-/***** ltl3ba : main.c *****/
+/***** ltl3dra : main.c *****/
 
 /* Written by Denis Oddoux, LIAFA, France                                 */
 /* Copyright (c) 2001  Denis Oddoux                                       */
@@ -6,6 +6,8 @@
 /* Copyright (c) 2007  Paul Gastin                                        */
 /* Modified by Tomas Babiak, FI MU, Brno, Czech Republic                  */
 /* Copyright (c) 2012  Tomas Babiak                                       */
+/* Modified by Tomas Babiak and Frantisek Blahoudek, Brno, Czech Republic */
+/* Copyright (c) 2013  Tomas Babiak and Frantisek Blahoudek               */
 /*                                                                        */
 /* This program is free software; you can redistribute it and/or modify   */
 /* it under the terms of the GNU General Public License as published by   */
@@ -26,11 +28,18 @@
 /* Verification, CAV 2001, Paris, France.                                 */
 /* Proceedings - LNCS 2102, pp. 53-65                                     */
 /*                                                                        */
-/* Modifications based on paper by                                        */
+/* and on paper by                                                        */
 /* T. Babiak, M. Kretinsky, V. Rehak, and J. Strejcek,                    */
 /* LTL to Buchi Automata Translation: Fast and More Deterministic         */
 /* presented at the 18th International Conference on Tools and            */
 /* Algorithms for the Construction and Analysis of Systems (TACAS 2012)   */
+/*                                                                        */
+/* The translation to deterministic Rabin automata is based on paper by   */
+/* T. Babiak, F. Blahoudek, M. Kretinsky, and J. Strejcek                 */
+/* Effective Translation of LTL to Deterministic Rabin Automata:          */
+/* Beyond the (F,G)-Fragment (2013)                                       */
+/* In 11th International Symposium on Automated Technology for            */
+/* Verification and Analysis (ATVA 2013)                                  */
 /*                                                                        */
 /* Some of the code in this file was taken from the Spin software         */
 /* Written by Gerard J. Holzmann, Bell Laboratories, U.S.A.               */
@@ -45,9 +54,6 @@ FILE	*tl_out;
 std::ofstream *automaton;
 std::ostream *goal_output;
 
-#ifdef STATS
-int	tl_stats     = 0; /* time and size stats */	
-#endif
 int tl_simp_log  = 1; /* logical simplification */
 int tl_simp_diff = 1; /* automata simplification */
 int tl_simp_fly  = 1; /* on the fly simplification */
@@ -130,44 +136,41 @@ tl_UnGetchar(void)
 void
 usage(int estatus)
 {
-        printf("usage: ltl3ba [-flag] -f formula\n");
+        printf("usage: ltl3dra [-flag] -f formula\n");
         printf("                   or -F file\n");
         printf(" -f \"formula\"\ttranslate LTL ");
-        printf("into never claim\n");
+        printf("into DRA\n");
         printf(" -F file\tlike -f, but with the LTL ");
         printf("formula stored in a 1-line file\n");
-        printf(" -d\t\tdisplay automata (D)escription at each step\n");
-#ifdef STATS
-        printf(" -s\t\tcomputing time and automata sizes S(t)atistics\n");
-#endif
+        printf(" -d\t\tdisplay automata (D)escription at each step (VWAA, TGDRA, and DRA)\n");
+
         printf(" -l\t\tdisable (L)ogic formula simplification\n");
         printf(" -p\t\tdisable a-(P)osteriori simplification\n");
         printf(" -o\t\tdisable (O)n-the-fly simplification\n");
-        printf(" -c\t\tdisable strongly (C)onnected components simplification\n");
-        printf(" -a\t\tdisable trick in (A)ccepting conditions\n");
-        printf("\n  LTL3BA specific options:\n");
-        printf(" -P\t\tdisable (P)ostponing/suspension in TGBA construction\n");
-        printf(" -D\t\tdisable (D)irect building of final components\n");
-        printf(" -C\t\tdisable removing non-accepting strongly (C)onnected components\n");
-        printf(" -A\t\tdisable suspension in (A)lternating automaton construction\n");
-        printf(" -R\t\tdisable rewriting R formulae with alternating subformulae\n");
-        printf(" -M\t\ttry to produce more deter(M)inistic automaton (recomended)\n");
-        printf(" -B\t\tenable basic (B)isimulation reduction of BA\n");
-        printf(" -S\t\tenable strong fair (S)imulation reduction of BA\n");
-        printf(" -T\t\tconstruct only the TGBA and output it in SPOT's format\n");
-        printf(" -U\t\toutput final BA in SPOT's format\n");
-        printf(" -x\t\tdisable all LTL3BA specific improvements (act like LTL2BA)\n");
-        printf(" -v\t\tprint LTL3BA's version and exit\n");
-        printf(" -h\t\tprint this help\n");
-#ifdef DRA
-        printf("\n -Z\t\ttranslate to DRA\n");
-        printf(" -X\t\tdisable use modified construction of VWAA (use GXF, FXG instead of GF and FG)\n");
-        printf(" -O\t\tdisable optimize accepting sets of TGDRA\n");
-        printf(" -I\t\tdisable use improved allowed transitions of TGDRA\n");
-        printf(" -N\t\tuse configuration dominance in TGDRA construction\n (experimental, not always correct)");
+//        printf(" -c\t\tdisable strongly (C)onnected components simplification\n");
+//        printf(" -a\t\tdisable trick in (A)ccepting conditions\n");
+//        printf("\n  LTL3BA specific options:\n");
+//        printf(" -P\t\tdisable (P)ostponing/suspension in TGBA construction\n");
+//        printf(" -D\t\tdisable (D)irect building of final components\n");
+//        printf(" -C\t\tdisable removing non-accepting strongly (C)onnected components\n");
+//        printf(" -A\t\tdisable suspension in (A)lternating automaton construction\n");
+//        printf(" -R\t\tdisable rewriting R formulae with alternating subformulae\n");
+//        printf(" -M\t\ttry to produce more deter(M)inistic automaton (recomended)\n");
+//        printf(" -B\t\tenable basic (B)isimulation reduction of BA\n");
+//        printf(" -S\t\tenable strong fair (S)imulation reduction of BA\n");
+        printf(" -X\t\tdisable modified construction of VWAA (use GXF, FXG instead of GF and FG)\n");
+        printf(" -O\t\tdisable optimizations of accepting sets of TGDRA\n");
+        printf(" -I\t\tuse different definition of allowed transitions of TGDRA (c_1 \\in m_1)\n");
+        printf(" -N\t\tuse configuration dominance in TGDRA construction (experimental, not always correct)\n");
         printf(" -G file\tWrites goal output into given file \n");
         printf(" -t\t\tprints only statistics about TGDRA and DRA \n");
-#endif
+//        printf(" -x\t\tdisable all LTL3BA specific improvements (act like LTL2BA)\n");
+        printf(" -v\t\tprint LTL3DRA's version and exit\n");
+        printf(" -h\t\tprint this help\n");
+        printf("\n  act-like LTL3BA options:\n");
+        printf(" -T\t\tconstruct only the TGBA and output it in SPOT's format - act like ltl3ba in default setting\n");
+        printf(" -U\t\toutput BA in SPOT's format - act like ltl3ba in default setting\n");
+        printf(" -B\t\toutput BA as never claim - act like ltl3ba in default setting\n");
 
         alldone(estatus);
 }
@@ -175,7 +178,7 @@ usage(int estatus)
 void
 print_version()
 {
-        printf("LTL3BA %s\n", VERSION_NUM);
+        printf("LTL3DRA %s\n", VERSION_NUM);
 }
 
 int
@@ -192,9 +195,6 @@ tl_main(std::string &argv)
 	hasuform = uform.length();
 	if (hasuform == 0) usage(1);
 	tl_parse();
-#ifdef STATS
-	if (tl_stats) tl_endstats();
-#endif
 	return tl_errs;
 }
 
@@ -209,30 +209,24 @@ main(int argc, char *argv[])
                           argc--; argv++; break;
                 case 'f': if (*(argv+2)) add_ltl = *(argv+2);
                           argc--; argv++; break;
-                case 'a': tl_fjtofj = 0; break;
-                case 'c': tl_simp_scc = 0; tl_rem_scc = 0; break;
+//                case 'a': tl_fjtofj = 0; break;
+//                case 'c': tl_simp_scc = 0; tl_rem_scc = 0; break;
                 case 'o': tl_simp_fly = 0; break;
                 case 'p': tl_simp_diff = 0; break;
                 case 'l': tl_simp_log = 0; break;
                 case 'd': tl_verbose = 1; break;
-#ifdef STATS
-                case 't': tl_stats = 1; break;
-#endif
-                case 'M': tl_det_m = 1; break;
-                case 'P': tl_postpone = 0; break;
-                case 'D': tl_f_components = 0; break;
-                case 'C': tl_rem_scc = 0; break;
-                case 'A': tl_alt = 0; break;
-                case 'R': tl_rew_f = 0; break;
-                case 'm': tl_determinize   = 1; break;
-                case 'b': tl_bisim = 1; break;
-                case 'B': tl_bisim_r = 1; break;
-                case 's': tl_sim = 1; break;
-                case 'S': tl_sim_r = 1; break;
-                case 'T': tl_tgba_out = 1; tl_ba_out = 0; break;
-                case 'U': tl_ba_out = 1; tl_tgba_out = 0; break;
-#ifdef DRA
-                case 'Z': tl_dra_out = 1; tl_alt = 0; break;
+//                case 'M': tl_det_m = 1; break;
+//                case 'P': tl_postpone = 0; break;
+//                case 'D': tl_f_components = 0; break;
+//                case 'C': tl_rem_scc = 0; break;
+//                case 'A': tl_alt = 0; break;
+//                case 'R': tl_rew_f = 0; break;
+//                case 'm': tl_determinize   = 1; break;
+//                case 'b': tl_bisim = 1; break;
+//                case 'B': tl_bisim_r = 1; break;
+//                case 's': tl_sim = 1; break;
+//                case 'S': tl_sim_r = 1; break;
+            #ifdef DRA
                 case 'X': tl_dra_alt = 0; tl_f_components = 0; break;
                 case 'O': tl_dra_opt = 0; break;
                 case 'I': tl_dra_acc_imp = 0; break;
@@ -241,24 +235,29 @@ main(int argc, char *argv[])
                   automaton = new std::ofstream(*(argv+2)); goal_output = new std::ostream(automaton->rdbuf());
                   argc--; argv++; break;
                 case 't': tl_dra_stats = 1; tl_verbose=0; break;
-#endif
-                case 'x': tl_postpone = 0; tl_f_components = 0; tl_ltl3ba = 0; tl_rem_scc = 0; tl_alt = 0; tl_rew_f = 0; break;
+
                 case 'v': print_version(); alldone(0);
                 case 'h': usage(0); break;
-                default : printf("ltl3ba: unknown option -- %c\n\n", argv[1][1]); usage(1); break;
+#endif
+                case 'T': tl_tgba_out = 1; tl_ba_out = 0; tl_dra_out = 0; tl_alt = 1; break;
+                case 'U': tl_ba_out = 1; tl_tgba_out = 0; tl_dra_out = 0; tl_alt = 1; break;
+                case 'B': tl_dra_out = 0; tl_alt = 1; break;
+
+                //case 'x': tl_postpone = 0; tl_f_components = 0; tl_ltl3ba = 0; tl_rem_scc = 0; tl_alt = 0; tl_rew_f = 0; break;
+                default : printf("ltl3dra: unknown option -- %c\n\n", argv[1][1]); usage(1); break;
                 }
                 argc--, argv++;
         }
   
         if(ltl_file.empty() && add_ltl.empty()) {
-          printf("ltl3ba: no formula given at input\n\n");
+          printf("ltl3dra: no formula given at input\n\n");
           usage(1);
         }
 
         if (!ltl_file.empty())
         {       std::ifstream in_file(ltl_file.c_str(), std::ifstream::in);
                 if (!in_file.is_open())
-                {       printf("ltl3ba: cannot open %s\n", ltl_file.c_str());
+                {       printf("ltl3dra: cannot open %s\n", ltl_file.c_str());
                         alldone(1);
                 }
                 std::getline(in_file, add_ltl, '\0');
@@ -272,38 +271,6 @@ main(int argc, char *argv[])
         }
         usage(1);
 }
-
-#ifdef STATS
-/* Subtract the `struct timeval' values X and Y, storing the result X-Y in RESULT.
-   Return 1 if the difference is negative, otherwise 0.  */
- 
-/*int
-timeval_subtract (result, x, y)
-struct timeval *result, *x, *y;*/
-int timeval_subtract (timeval *result, timeval *x, timeval *y)
-{ 
-	if (x->tv_usec < y->tv_usec) {
-		x->tv_usec += 1000000;
-		x->tv_sec--;
-	}
-	
-	/* Compute the time remaining to wait. tv_usec is certainly positive. */
-	result->tv_sec = x->tv_sec - y->tv_sec;
-	result->tv_usec = x->tv_usec - y->tv_usec;
-	
-	/* Return 1 if result is negative. */
-	return x->tv_sec < y->tv_sec;
-}
-
-static void
-tl_endstats(void)
-{	extern int Stack_mx;
-	printf("\ntotal memory used: %9ld\n", All_Mem);
-	/*printf("largest stack sze: %9d\n", Stack_mx);*/
-	/*cache_stats();*/
-	a_stats();
-}
-#endif
 
 #define Binop(a)		\
 		fprintf(tl_out, "(");	\
@@ -398,7 +365,7 @@ non_fatal(const char *s1, char *s2)
 {	extern int tl_yychar;
 	int i;
 
-	printf("ltl3ba: ");
+    printf("ltl3dra: ");
 	if (s2)
 		printf(s1, s2);
 	else
@@ -408,7 +375,7 @@ non_fatal(const char *s1, char *s2)
 		tl_explain(tl_yychar);
 		printf("'");
 	}
-	printf("\nltl3ba: %s\n-------", uform.c_str());
+    printf("\nltl3dra: %s\n-------", uform.c_str());
 	for (i = 0; i < cnt; i++)
 		printf("-");
 	printf("^\n");

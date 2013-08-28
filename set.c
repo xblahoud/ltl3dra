@@ -1,4 +1,4 @@
-/***** ltl3ba : set.c *****/
+/***** ltl3dra : set.c *****/
 
 /* Written by Denis Oddoux, LIAFA, France                                 */
 /* Copyright (c) 2001  Denis Oddoux                                       */
