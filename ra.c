@@ -382,8 +382,8 @@ void print_ra_ltl2dstar(std::ostream &out) {
 
   // Header
   out << "DRA v2 explicit" << endl;
-  out << "Comment: \"Created by LTL3DRA v.0.1.\"" << endl;
-  out << "States: " << drastates.size() << endl;
+  out << "Comment: \"Created by LTL3DRA v." << VERSION_NUM << "\"" << endl;
+  out << "States: " << rastates.size() << endl;
   out << "Acceptance-Pairs: " << (Z_set.size()-removedConds) << endl;
   out << "Start: 0" << endl;
   out << "AP: " << sym_id;
@@ -391,16 +391,19 @@ void print_ra_ltl2dstar(std::ostream &out) {
   out << endl << "---" << endl;
 
   while (dstarMap[current_id]) {
+      int skipped_Z = 0;
       out << "State: " << current_id << endl;
       out << "Acc-Sig: ";
       for (int l = 0; l < levels_num; l++) {
         // Skip removed conditions
-        if (tl_dra_opt && isRemoved[l])
+        if (tl_dra_opt && isRemoved[l]) {
+          skipped_Z++;
           continue;
+        }
         if(dstarMap[current_id]->levels[l] == accept_levels[l])
-          out << " +" << l;
+          out << " +" << l-skipped_Z;
         if (dstarMap[current_id]->levels[l] == -1)
-          out << " -" << l;
+          out << " -" << l-skipped_Z;
       }
       out << endl;
 
