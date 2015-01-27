@@ -701,9 +701,9 @@ void mk_ra()
   remove_redundant_ra_init();
   
   if (tl_verbose && tl_simp_diff && !tl_dra_stats) {
-    fprintf(tl_out, "\nDRA automaton before optimization\n");
+    fprintf(tl_out, "\nDRA before optimization\n");
     print_ra(cout);
-    fprintf(tl_out, "\n\nDRA automaton after optimization\n");
+    fprintf(tl_out, "\n\nDRA after optimization\n");
   }
   
   if(tl_simp_diff) {
@@ -712,7 +712,11 @@ void mk_ra()
   }
 
 //  if (!tl_dra_stats) {
-//  fprintf(tl_out, "\nRA automaton\n");
+//  fprintf(tl_out, "\nDRA in internal format\n");
+  if (tl_verbose) {
+    print_ra(cout);
+    fprintf(tl_out, "\n\nDRA in ltl2dstar format\n");
+  }
   print_ra_ltl2dstar(cout);
 //  }
 

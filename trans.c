@@ -44,7 +44,7 @@
 #include "ltl3dra.h"
 #include <bdd.h>
 
-extern int tl_verbose, tl_terse, tl_errs, tl_tgba_out, tl_dra_out;
+extern int tl_verbose, tl_terse, tl_errs, tl_spot_out, tl_hoaf, tl_dra_out;
 extern FILE	*tl_out;
 
 int	Stack_mx=0, Max_Red=0, Total=0;
@@ -215,9 +215,11 @@ void trans(Node *p)
 #ifdef DRA
   if (!tl_dra_out) {
 #endif
-    mk_generalized();
-    if (!tl_tgba_out)
-      mk_buchi();
+    if (!tl_hoaf || tl_hoaf > 1) {
+      mk_generalized();
+      if ((!tl_spot_out || tl_spot_out > 2) && (!tl_hoaf || tl_hoaf > 2))
+        mk_buchi();
+    }
 #ifdef DRA
   } else {
     mk_dra();

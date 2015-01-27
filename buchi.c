@@ -60,8 +60,7 @@ using namespace std;
 extern GState **init, *gstates;
 
 extern int tl_verbose, tl_stats, tl_simp_diff, tl_simp_fly, tl_simp_scc, tl_ltl3ba,
-  tl_bisim, tl_bisim_r, tl_sim, tl_sim_r, init_size, *final, tl_ba_out;
-extern void put_uform(void);
+  tl_bisim, tl_bisim_r, tl_sim, tl_sim_r, init_size, *final, tl_spot_out, tl_hoaf;
 
 extern int sym_size, mod, predicates, scc_id, gstate_id;
 extern char **sym_table;
@@ -917,7 +916,10 @@ void print_buchi(BState *s) /* dumps the Buchi automaton */
     }
     fprintf(tl_out, " -> ");
     if(t->first->id == -1) 
-      fprintf(tl_out, "init\n");
+      if(s->final == accept)
+        fprintf(tl_out, "accept_init\n");
+      else
+        fprintf(tl_out, "init\n");
     else {
       if(t->first->final == accept)
         fprintf(tl_out, "accept");
@@ -1005,7 +1007,73 @@ void print_ba_state(BState* s) {
   else fprintf(tl_out, "T%i_", s->final);
   if(s->id == -1)
     fprintf(tl_out, "init");
+  else if(s->id == 0)
+    fprintf(tl_out, "all");
   else fprintf(tl_out, "S%i", s->id);
+}
+
+void print_ba_hoaf_header(int states, int init_state) {
+  fprintf(tl_out, "HOA: v1\n");
+  fprintf(tl_out, "tool: \"ltl3ba\" \"%s\"\n", VERSION_NUM);
+  fprintf(tl_out, "name: \"BA for ");
+  put_uform();
+  fprintf(tl_out, "\"\n");
+  fprintf(tl_out, "States: %d\n", states);
+  if (states > 0) {
+    fprintf(tl_out, "Start: %d\n", init_state);
+    fprintf(tl_out, "acc-name: Buchi\n");
+    fprintf(tl_out, "Acceptance: 1 Inf(0)\n");
+    fprintf(tl_out, "AP: %d", predicates);
+    for (int i = 0; i < predicates; ++i) {
+      fprintf(tl_out, " \"%s\"", sym_table[i]);
+    }
+    fprintf(tl_out, "\n");
+    fprintf(tl_out, "properties: trans-labels explicit-labels state-acc no-univ-branch\n");
+  } else {
+    fprintf(tl_out, "acc-name: none\n");
+    fprintf(tl_out, "Acceptance: 0 f\n");
+  }
+}
+
+void print_ba_hoaf() {
+  BState *s;
+  map<BState*, bdd>::iterator t;
+
+  // Count states and prepare bstate to int map
+  map<BState*, int> bstate2Int;
+  int init_state = -1;
+  bstate_count = 0;
+  for(s = bstates->prv; s != bstates; s = s->prv) {
+    // Remember the initial state.
+    if (s->id == -1)
+      init_state = bstate_count;
+    bstate2Int[s] = bstate_count++;
+  }
+  
+  print_ba_hoaf_header(bstate_count, init_state);
+
+  fprintf(tl_out, "--BODY--\n");
+
+  for(s = bstates->prv; s != bstates; s = s->prv) {
+    fprintf(tl_out, "State: %d \"", bstate2Int[s]);
+    print_ba_state(s);
+    fprintf(tl_out, "\"");
+    if(s->final == accept)
+      fprintf(tl_out, " {0}");
+    fprintf(tl_out, "\n");
+    for(t = s->trans->begin(); t != s->trans->end(); t++) {
+        fprintf(tl_out, " [");
+        if (t->second == bdd_true()) {
+          fprintf(tl_out, "t");
+        } else {
+          print_or = 0;
+          bdd_allsat(t->second, allsatPrintHandler_hoaf);
+        }
+        fprintf(tl_out, "]");
+      fprintf(tl_out, " %d\n", bstate2Int[t->first]);
+    }
+  }
+  fprintf(tl_out, "--END--\n");
 }
 
 void print_ba() {
@@ -1159,6 +1227,7 @@ void mk_buchi()
 
   s->nxt        = bstates; /* creates (unique) inital state */
   s->prv        = bstates;
+  bstate_count++;
   s->id = -1;
   s->incoming = 1;
   s->final = 0;
@@ -1167,7 +1236,7 @@ void mk_buchi()
 #ifdef DICT
   bsDict[0]->insert(pair<GState*, BState*>(0, s));
 #endif
-  for(i = 0; i < init_size; i++) 
+  for(i = 0; i < init_size; i++)
     if(init[i])
       for(gt = init[i]->trans->begin(); gt != init[i]->trans->end(); gt++) {
         for(gt2 = gt->second.begin(); gt2 != gt->second.end(); gt2++) {
@@ -1224,14 +1293,18 @@ void mk_buchi()
 #endif
 
   if(tl_verbose) {
-    fprintf(tl_out, "\nBuchi automaton before simplification\n");
-    print_buchi(bstates->nxt);
-    if(bstates == bstates->nxt) 
-      fprintf(tl_out, "empty automaton, refuses all words\n");  
+    fprintf(tl_out, "Buchi automaton before simplification\n");
+    if (tl_verbose == 1) {
+      print_buchi(bstates->nxt);
+      if(bstates == bstates->nxt) 
+        fprintf(tl_out, "empty automaton, refuses all words\n");
+    } else
+      print_ba_hoaf();
+    fprintf(tl_out, "\n");
   }
 
   if(tl_simp_diff) {
-//    simplify_btrans(); - it is done implicitnly thanks to the representation of transitions
+//    simplify_btrans(); - it is done implicitly thanks to the representation of transitions
     if(tl_simp_scc) simplify_bscc();
     while(simplify_bstates()) { /* simplifies as much as possible */
 //      simplify_btrans();
@@ -1239,10 +1312,13 @@ void mk_buchi()
     }
     
     if(tl_verbose) {
-      fprintf(tl_out, "\nBuchi automaton after simplification\n");
-      print_buchi(bstates->nxt);
-      if(bstates == bstates->nxt) 
-        fprintf(tl_out, "empty automaton, refuses all words\n");
+      fprintf(tl_out, "Buchi automaton after simplification\n");
+      if (tl_verbose == 1) {
+        print_buchi(bstates->nxt);
+        if(bstates == bstates->nxt) 
+          fprintf(tl_out, "empty automaton, refuses all words\n");
+      } else
+        print_ba_hoaf();
       fprintf(tl_out, "\n");
     }
   }
@@ -1278,8 +1354,10 @@ void mk_buchi()
     } while (bstate_count < states || btrans_count < trans);
   }
 
-  if (tl_ba_out) {
-    print_ba(); 
+  if (tl_hoaf == 3) {
+    print_ba_hoaf();
+  } else if (tl_spot_out == 3) {
+    print_ba();
   } else {
     print_spin_buchi();
   }

@@ -40,7 +40,7 @@ extern map<cset, ATrans*> **transition;
 //extern int tl_simp_fly, tl_ltl3ba, tl_f_components, compute_directly;
 extern int tl_verbose, tl_fjtofj, print_or, sym_id, *final_set, *final,
   *must_nodes, *may_nodes, **predecessors, tl_dra_opt, tl_dra_acc_imp, tl_simp_diff,
-  tl_dra_conf_dom;
+  tl_dra_conf_dom, predicates;
 extern char **sym_table;
 static std::ostream* where_os;
 
@@ -50,6 +50,7 @@ extern map<cset, GState*> gsDict;
 #endif
 extern int gstate_id;
 extern cset *fin;
+extern std::string uform;
 
 set<DRAstate*, DRAstateComp> drastates;
 set<DRAstate*, DRAstateComp> draRemoved;
@@ -62,9 +63,10 @@ list<bdd> det_constraints;
 extern set<cset> Z_set;
 map<cset, int> Z_setToInt;
 map<int, cset> IntToZ_set;
+map<int, int> Zindex_to_hoaf;
 map<int, int> acc_to_pos;
 map<int, int> pos_to_acc;
-map<int, set<cset> > ACz;
+map<int, set<cset> > ACz;  // Allowed configurations for given Z-index?
 
 typedef vector<vector<bool> > inclusionTable_t; // if inclusionTable_t[i][j]=true -> i \subseteq j
 vector<inclusionTable_t> condSubsets;
@@ -104,7 +106,7 @@ bool are_F_successors(cset& Fs, cset& sucs) {
 
 void DRAstate::insert(cset &c) {
 
-//  Antichains optimization disabled. Uncomment to enable.
+//  Incorrect antichain-optimization disabled. Uncomment to enable.
 //  set<cset>::iterator i,j;
 //  cset Fs, temp;
 //  for (i=sets.begin(); i!=sets.end();) {
@@ -215,7 +217,7 @@ GenCond DRAtrans::allowed_for_Z(int i, const DRAstate* from, bdd label) {
   if (tl_dra_opt)
     flag = &condSethasTrans[i-1].second;
 
-  /* Searches for allowed configuration such that it has multitransition
+  /* Searches for an allowed configuration such that it has a multitransition
    * into allowed configuration of the target macrostate (to) of this transition */
 
   // Use c_1 (m_j) from AC_Z
@@ -326,8 +328,12 @@ bool evaluate_subsets_for_implication(vector<cset>& subsets, vector<bool>& f_acc
 
 GenCondMap_t DRAtrans::evaluate_acc_cond(const DRAstate* from, bdd label) {
   set<cset>::iterator m_i;
+
+  // We return the cond object. The cond object maps the indices of gen. Rabin pairs into info,
+  // in which of the pair's sets the transition (this with the given 'bdd label') is.
   GenCondMap_t cond;
 
+  // First init the cond object
   for (m_i = Z_set.begin(); m_i != Z_set.end(); m_i++) {
     int i = Z_setToInt[*m_i];
     cond.insert(make_pair(i, allowed_for_Z(i, from, label)));
@@ -370,11 +376,15 @@ GenCondMap_t DRAtrans::evaluate_acc_cond(const DRAstate* from, bdd label) {
 void compute_allowed_conf() {
   set<cset>::iterator s_i, s_j;
   int *list, i, j = 1;
+  int hoaf = 0; cset hoaf_acc;
   cset must, may;
   
   for (s_i = Z_set.begin(); s_i != Z_set.end(); s_i++) {
     Z_setToInt.insert(make_pair(*s_i, j));
     IntToZ_set.insert(make_pair(j, *s_i));
+    Zindex_to_hoaf.insert(make_pair(j,hoaf));
+    hoaf_acc.intersect_sets(*s_i, final_set);
+    hoaf += hoaf_acc.size() + 1;
     must.intersect_sets(*s_i, must_nodes);
     may.substract(*s_i, must);
     list = may.to_list();
@@ -1077,12 +1087,12 @@ std::ostream& dra::operator<<(std::ostream &out, const GenCond &c) {
 void GenCond::print(std::ostream &out, int Z_i) const {
   int i;
   bool start = true;
-  cset& c = IntToZ_set[Z_i];
+  cset& z_set = IntToZ_set[Z_i];
 
   out << "<" << (allowed?"+":"-") << ",{";
   for (i = 0; i < f_accepting.size(); i++) {
-    if (c.is_elem(pos_to_acc[i]) &&
-        (!tl_dra_opt || !removedI_sets[Z_i-1].is_elem(pos_to_acc[i]))) {
+    if (z_set.is_elem(pos_to_acc[i]) &&
+        (!tl_dra_opt || !removedI_sets[Z_i-1].is_elem(pos_to_acc[i]) ) ) {
       if (!start)
         out << ",";
       out << (f_accepting[i]?"+":"-");
@@ -1096,6 +1106,7 @@ std::ostream& dra::operator<<(std::ostream &out, const DRAtrans &t) {
   where_os = &out;
   map<GenCondMap_t, bdd>::const_iterator m_j;
 
+  // Each item of conds_to_labels represents an edge. Print the edges.
   for (m_j = t.conds_to_labels.begin(); m_j != t.conds_to_labels.end(); m_j++) {
     out << "\t";
     print_or = 0;
@@ -1107,12 +1118,12 @@ std::ostream& dra::operator<<(std::ostream &out, const DRAtrans &t) {
       bdd_allsat(label, allsatPrintHandler);
     out << " -> " << t.to->id << "\t";
 
-    GenCondMap_t::const_iterator m_i;
-    for(m_i=m_j->first.begin(); m_i!=m_j->first.end(); m_i++) {
-      if (m_i != m_j->first.begin())
+    GenCondMap_t::const_iterator z_i;
+    for(z_i=m_j->first.begin(); z_i!=m_j->first.end(); z_i++) {
+      if (z_i != m_j->first.begin())
         out << ", ";
-      out << m_i->first << ":";
-      m_i->second.print(out, m_i->first);
+      out << z_i->first << ":";
+      z_i->second.print(out, z_i->first);
     }
     out << endl;
   }
@@ -1120,13 +1131,60 @@ std::ostream& dra::operator<<(std::ostream &out, const DRAtrans &t) {
   return out;
 }
 
+void print_tgdra_hoaf_header(int states,
+                             const map<int, int>& Zindex_to_hoaf,
+                             const map<GState*, int>& gstate2Int) {
+  cout << "HOA: v1" << endl;
+  cout << "tool: \"ltl3dra\"" << VERSION_NUM << endl;
+  cout << "name: \"TGBA for " << uform << "\"" << endl;
+  cout << "States: " << states << endl;
+  if (states > 0) {
+    //cout << "Start: " << gstate2Int.find(dra_init)->second << endl;
+    cout << "acc-name: generalized-Rabin " << Zindex_to_hoaf.size() << endl;
+    cout << "Acceptance: " << Zindex_to_hoaf.size() << endl;
+    if (Zindex_to_hoaf.size()>0) {
+      for(map<int, int>::const_iterator i = Zindex_to_hoaf.begin(); i != Zindex_to_hoaf.end(); i++) {
+        if (i != Zindex_to_hoaf.begin())
+          cout << " &";
+        cout << " Fin(" << i->second << ")";
+      }
+    } else {
+      cout << " f";
+    }
+    cout << endl;
+    cout << "AP: " << predicates << endl;
+    for (int i = 0; i < predicates; ++i) {
+      cout << " \"" << sym_table[i] << "\"";
+    }
+    cout << endl;
+    cout << "properties: trans-labels explicit-labels trans-acc no-univ-branch" << endl;
+  } else {
+    cout << "acc-name: none" << endl;
+    cout << "Acceptance: 0 f" << endl;
+  }
+}
+
+
 void print_dra(std::ostream &out) {
+  set<DRAstate*, DRAstateComp>::iterator s_i;
+  map<DRAstate*, DRAtrans>::iterator t_i;
+
+  out << "Init: " << dra_init->id << endl;
+  for(s_i=drastates.begin(); s_i!=drastates.end(); s_i++) {
+    out << "state " << (*s_i)->id << ": " << *(*s_i) << endl;
+    for(t_i=(*s_i)->trans->begin(); t_i!=(*s_i)->trans->end(); t_i++) {
+      out << t_i->second;
+    }
+  }
+}
+
+void print_dra_old(std::ostream &out) {
   set<DRAstate*, DRAstateComp>::iterator s_i;
   map<DRAstate*, DRAtrans>::iterator t_i;
   
   out << "Init: " << dra_init->id << endl;
   for(s_i=drastates.begin(); s_i!=drastates.end(); s_i++) {
-    out << "state " << (*s_i)->id << " : " << *(*s_i) << endl;
+    out << "state " << (*s_i)->id << ": " << *(*s_i) << endl;
     for(t_i=(*s_i)->trans->begin(); t_i!=(*s_i)->trans->end(); t_i++) {
       out << t_i->second;
     }

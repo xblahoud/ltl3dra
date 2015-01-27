@@ -28,7 +28,7 @@
 /* Verification, CAV 2001, Paris, France.                                 */
 /* Proceedings - LNCS 2102, pp. 53-65                                     */
 /*                                                                        */
-/* and on paper by                                                        */
+/* Modifications based on paper by                                        */
 /* T. Babiak, M. Kretinsky, V. Rehak, and J. Strejcek,                    */
 /* LTL to Buchi Automata Translation: Fast and More Deterministic         */
 /* presented at the 18th International Conference on Tools and            */
@@ -58,7 +58,7 @@ using namespace std;
 
 extern FILE *tl_out;
 extern int tl_verbose, tl_stats, tl_simp_diff, tl_alt, tl_determinize, tl_det_m,
-  tl_f_components, tl_tgba_out, tl_ba_out, tl_tgba_out, tl_dra_out, tl_dra_alt;
+  tl_f_components, tl_spot_out, tl_hoaf, tl_dra_out, tl_dra_alt;
 
 Node **label;
 char **sym_table;
@@ -169,6 +169,32 @@ int get_sym_id(char *s) /* finds the id of a predicate, or atttributes one */
   return sym_id++;
 }
 
+
+void add_trans(map<cset, ATrans*>* result, const cset& to, ATrans* tmp)
+{
+  // First check whether there already exists a transtion leading
+  // to the same node "to". If so, merge it with the new transition.
+  ATrans*& tmp_2 = (*result)[to];
+  if (tmp_2) {
+    tmp_2->label |= tmp->label;
+    tfree(tmp);
+  } else {
+    tmp_2 = tmp;
+  }
+}
+
+void add_dup_trans(map<cset, ATrans*>* result, const cset& to, ATrans* tmp)
+{
+  // First check whether there already exists a transtion leading
+  // to the same node "to". If so, merge it with the new transition.
+  ATrans*& tmp_2 = (*result)[to];
+  if (tmp_2) {
+    tmp_2->label |= tmp->label;
+  } else {
+    tmp_2 = dup_trans(tmp);
+  }
+}
+
 map<cset, ATrans*> *boolean(Node *p) /* computes the transitions to boolean nodes -> next & init */
 {
   ATrans *t;
@@ -180,7 +206,7 @@ map<cset, ATrans*> *boolean(Node *p) /* computes the transitions to boolean node
     result = new map<cset, ATrans*>();
     t = emalloc_atrans();
     t->label = bdd_true();
-    result->insert(pair<cset, ATrans*>(cset(0), t));
+    add_trans(result, cset(0), t);
   case FALSE:
     break;
   case AND:
@@ -195,14 +221,7 @@ map<cset, ATrans*> *boolean(Node *p) /* computes the transitions to boolean node
               result = new map<cset, ATrans*>();
             cset to(0);
             to.merge(t1->first, t2->first);
-            // First check whether there already exists a transtion leading
-            // to the same node "to". If so, merge it with the new transition.
-            ATrans** tmp_2 = &(*result)[to];
-            if (*tmp_2) {
-              (*tmp_2)->label |= tmp->label;
-            } else {
-              *tmp_2 = tmp;
-            }
+            add_trans(result, to, tmp);
           }
         }
     }
@@ -215,20 +234,13 @@ map<cset, ATrans*> *boolean(Node *p) /* computes the transitions to boolean node
     if (lft)
       for(t1 = lft->begin(); t1 != lft->end(); t1++) {
         ATrans *tmp = dup_trans(t1->second);
-        result->insert(pair<cset, ATrans*>(cset(t1->first), tmp));
+        add_trans(result, cset(t1->first), tmp);
       }
     free_atrans_map(lft);
     rgt = boolean(p->rgt);
     if (rgt)
       for(t1 = rgt->begin(); t1 != rgt->end(); t1++) {
-        // First check whether there already exists a transtion leading
-        // to the same node. If so, merge it with the new transition. 
-        ATrans **tmp = &(*result)[t1->first];
-        if (*tmp) {
-          (*tmp)->label |= t1->second->label;
-        } else {
-          *tmp = dup_trans(t1->second);
-        }
+        add_dup_trans(result, t1->first, t1->second);
       }
     free_atrans_map(rgt);
     break;
@@ -237,7 +249,7 @@ map<cset, ATrans*> *boolean(Node *p) /* computes the transitions to boolean node
     result = new map<cset, ATrans*>();
     t = emalloc_atrans();
     t->label = bdd_true();
-    result->insert(pair<cset, ATrans*>(cset(already_done(p), 0), t));
+    add_trans(result, cset(already_done(p), 0), t);
   }
   return result;
 }
@@ -258,7 +270,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
     result = new map<cset, ATrans*>();
     t = emalloc_atrans();
     t->label = bdd_true();
-    result->insert(pair<cset, ATrans*>(to, t));
+    add_trans(result, to, t);
   case FALSE:
     break;
 
@@ -266,14 +278,14 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
     result = new map<cset, ATrans*>();
     t = emalloc_atrans();
     t->label = bdd_ithvar(get_sym_id(p->sym->name));
-    result->insert(pair<cset, ATrans*>(to, t));
+    add_trans(result, to, t);
     break;
 
   case NOT:
     result = new map<cset, ATrans*>();
     t = emalloc_atrans();
     t->label = bdd_nithvar(get_sym_id(p->lft->sym->name));
-    result->insert(pair<cset, ATrans*>(to, t));
+    add_trans(result, to, t);
     break;
 
 #ifdef NXT
@@ -285,7 +297,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
       build_alternating(p->lft);
       t = emalloc_atrans();
       t->label = bdd_true();
-      result->insert(pair<cset, ATrans*>(cset(already_done(p->lft), 0), t));
+      add_trans(result, cset(already_done(p->lft), 0), t);
     }
     break;
 #endif
@@ -299,20 +311,19 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
         for(t2 = rgt->begin(); t2 != rgt->end(); t2++) {
           ATrans *tmp = dup_trans(t2->second); /* q */
           tmp->label = bdd_true();
-          result->insert(pair<cset, ATrans*>(cset(t2->first), tmp));
+          add_trans(result, cset(t2->first), tmp);
         }
       ATrans *tmp = emalloc_atrans();
       tmp->label = bdd_true();
       to.insert(node_id);
-      result->insert(pair<cset, ATrans*>(to, tmp));
+      add_trans(result, to, tmp);
       add_set(final_set, node_id);
       break;
     }
-#endif
     if (tl_dra_alt && is_F(p) && is_Gconj(p->rgt)) {
       rgt = build_alternating(p->rgt);
       if (!rgt || rgt->size() != 1) {
-        printf("ltl3dra: unexpected/unsound result during WVAA creation", tl_out);
+        printf("ltl3dra: unexpected/unsound result during WVAA creation");
         free_atrans_map(rgt);
         bdd_done();
         exit(5);
@@ -321,15 +332,16 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
       tmp->label = bdd_true();
       to = rgt->begin()->first;
       result = new map<cset, ATrans*>();
-      result->insert(pair<cset, ATrans*>(to, tmp));
+      add_trans(result, to, tmp);
       tmp = emalloc_atrans();
       tmp->label = bdd_true();
       to.clear();
       to.insert(node_id);
-      result->insert(pair<cset, ATrans*>(to, tmp));
+      add_trans(result, to, tmp);
       add_set(final_set, node_id);
       break;
     }
+#endif
     result = new map<cset, ATrans*>();
     if (tl_determinize && is_LTL(p->rgt))
       determ = 1;
@@ -337,7 +349,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
     if (rgt)
       for(t2 = rgt->begin(); t2 != rgt->end(); t2++) {
         ATrans *tmp = dup_trans(t2->second); /* q */
-        result->insert(pair<cset, ATrans*>(cset(t2->first), tmp));
+        add_trans(result, cset(t2->first), tmp);
       }
     
     lft = build_alternating(p->lft);
@@ -355,9 +367,9 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
             tmp->label &= ! t2->second->label;
           }
         if (tmp->label != bdd_false())
-          result->insert(pair<cset, ATrans*>(to, tmp));
+          add_trans(result, to, tmp);
       } else
-        result->insert(pair<cset, ATrans*>(to, tmp));
+        add_trans(result, to, tmp);
     } else {
       /* Deterministic construction */
       if (determ) {
@@ -371,8 +383,8 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
               for(t2 = rgt->begin(); t2 != rgt->end(); t2++) { /* Adds !q */
                 tmp->label &= ! t2->second->label;
               }
-              if (tmp->label != bdd_false())
-                result->insert(pair<cset, ATrans*>(to, tmp));
+            if (tmp->label != bdd_false())
+              add_trans(result, to, tmp);
           }
       } else {
         /* Original construction */
@@ -382,7 +394,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
             add_set(tmp->bad_nodes, node_id); /* Mark the transition */
             to = t1->first;
             to.insert(node_id);  /* X (p U q) */
-            result->insert(pair<cset, ATrans*>(to, tmp));
+            add_trans(result, to, tmp);
           }
       }
     }
@@ -408,7 +420,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
     if (tl_dra_alt && is_G(p) && is_Fconj(p->rgt)) {
       map<cset, ATrans*>* temp = boolean(p->rgt);
       if (temp->size() != 1) {
-        printf("ltl3dra: unexpected/unsound result during WVAA creation", tl_out);
+        printf("ltl3dra: unexpected/unsound result during WVAA creation");
         free_atrans_map(temp);
         bdd_done();
         exit(5);
@@ -417,7 +429,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
       to = temp->begin()->first;
       to.insert(node_id);
       result = new map<cset, ATrans*>();
-      result->insert(pair<cset, ATrans*>(to, tmp));
+      add_trans(result, to, tmp);
       free_atrans_map(temp);
       break;
     }
@@ -429,7 +441,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
           ATrans *tmp = dup_trans(t2->second); /* q */
           to = t2->first;
           to.insert(node_id);
-          result->insert(pair<cset, ATrans*>(to, tmp));
+          add_trans(result, to, tmp);
         }
       free_atrans_map(rgt);
       break;
@@ -440,7 +452,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
 
     rgt = build_alternating(p->rgt);
     lft = build_alternating(p->lft);
-    node = already_done(p->lft);    
+    node = already_done(p->lft);
     if (rgt)
       for(t1 = rgt->begin(); t1 != rgt->end(); t1++) {
         ATrans *tmp;
@@ -453,7 +465,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
               tmp = merge_trans(t1->second, t2->second);  /* p && q */
               if(tmp) {
                 to.merge(t1->first, t2->first);
-                result->insert(pair<cset, ATrans*>(to, tmp));
+                add_trans(result, to, tmp);
               }
             }
           }
@@ -474,9 +486,9 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
             tmp->label &= ! t2->second->label;
           }
         if (tmp->label != bdd_false())
-          result->insert(pair<cset, ATrans*>(to, tmp));
+          add_trans(result, to, tmp);
       } else {
-        result->insert(pair<cset, ATrans*>(to, tmp));
+        add_trans(result, to, tmp);
       }
     }
     break;
@@ -489,7 +501,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
       lft = new map<cset, ATrans*>();
       t = emalloc_atrans();
       t->label = bdd_true();
-      lft->insert(pair<cset, ATrans*>(cset(already_done(p->lft), 0), t));
+      add_trans(lft, cset(already_done(p->lft), 0), t);
       clear_lft = 1;
     }
     if (tl_alt && (p->rgt->ntyp == V_OPER || p->rgt->ntyp == U_OPER) &&
@@ -497,7 +509,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
       rgt = new map<cset, ATrans*>();
       t = emalloc_atrans();
       t->label = bdd_true();
-      rgt->insert(pair<cset, ATrans*>(cset(already_done(p->rgt), 0), t));
+      add_trans(rgt, cset(already_done(p->rgt), 0), t);
       clear_rgt = 1;
     }
     if (lft && rgt)
@@ -509,14 +521,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
               result = new map<cset, ATrans*>();
             cset to(0);
             to.merge(t1->first, t2->first);
-            // First check whether there already exists a transtion leading
-            // to the same node "to". If so, merge it with the new transition.
-            ATrans** tmp_2 = &(*result)[to];
-            if (*tmp_2) {
-              (*tmp_2)->label |= tmp->label;
-            } else {
-              *tmp_2 = tmp;
-            }
+            add_trans(result, to, tmp);
           }
         }
       }
@@ -535,7 +540,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
       lft = new map<cset, ATrans*>();
       t = emalloc_atrans();
       t->label = bdd_true();
-      lft->insert(pair<cset, ATrans*>(cset(already_done(p->lft), 0), t));
+      add_trans(lft, cset(already_done(p->lft), 0), t);
       clear_lft = 1;
     }
     if (tl_alt && (p->rgt->ntyp == V_OPER || p->rgt->ntyp == U_OPER) &&
@@ -543,7 +548,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
       rgt = new map<cset, ATrans*>();
       t = emalloc_atrans();
       t->label = bdd_true();
-      rgt->insert(pair<cset, ATrans*>(cset(already_done(p->rgt), 0), t));
+      add_trans(rgt, cset(already_done(p->rgt), 0), t);
       clear_rgt = 1;
     }
     if (tl_determinize && is_LTL(p->lft) && !is_LTL(p->rgt)) {
@@ -555,20 +560,13 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
               tmp->label &= ! t2->second->label;
             }
           if (tmp->label != bdd_false()) {
-            result->insert(pair<cset, ATrans*>(cset(t1->first), tmp));
+            add_trans(result, cset(t1->first), tmp);
           } else
             free_atrans(tmp, 0);
         }
       if (lft)
         for(t1 = lft->begin(); t1 != lft->end(); t1++) {
-            // First check whether there already exists a transtion leading
-            // to the same node. If so, merge it with the new transition. 
-            ATrans** tmp = &(*result)[t1->first];
-            if (*tmp) {
-              (*tmp)->label |= t1->second->label;
-            } else {
-              *tmp = dup_trans(t1->second);
-            }
+          add_dup_trans(result, t1->first, t1->second);
         }
     } else if (tl_determinize && !is_LTL(p->lft) && is_LTL(p->rgt)) {
       if (lft)
@@ -579,35 +577,23 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
               tmp->label &= ! t2->second->label;
             }
           if (tmp->label != bdd_false())
-            result->insert(pair<cset, ATrans*>(cset(t1->first), tmp));
+            add_trans(result, cset(t1->first), tmp);
           else
             free_atrans(tmp, 0);
         }
       if (rgt)
         for(t1 = rgt->begin(); t1 != rgt->end(); t1++) {
-          // First check whether there already exists a transtion leading
-          // to the same node. If so, merge it with the new transition. 
-          ATrans **tmp = &(*result)[t1->first];
-          if (*tmp) {
-            (*tmp)->label |= t1->second->label;
-          } else {
-            *tmp = dup_trans(t1->second);
-          }
+          add_dup_trans(result, t1->first, t1->second);
         }
     } else {
       if (lft)
         for(t1 = lft->begin(); t1 != lft->end(); t1++) {
           ATrans *tmp = dup_trans(t1->second);
-          result->insert(pair<cset, ATrans*>(cset(t1->first), tmp));
+          add_trans(result, cset(t1->first), tmp);
         }
       if (rgt)
         for(t1 = rgt->begin(); t1 != rgt->end(); t1++) {
-          ATrans **tmp = &(*result)[t1->first];
-          if (*tmp) {
-            (*tmp)->label |= t1->second->label;
-          } else {
-            *tmp = dup_trans(t1->second);
-          }
+          add_dup_trans(result, t1->first, t1->second);
         }
     }
     if (clear_lft)
@@ -735,6 +721,131 @@ void allsatPrintHandler(char* varset, int size)
   }
   fprintf(tl_out, ")");
   print_or = 1;
+}
+
+void allsatPrintHandler_hoaf(char* varset, int size)
+{
+  int print_and = 0;
+  
+  if (print_or) fprintf(tl_out, " | ");
+  fprintf(tl_out, "(");
+  for (int v=0; v<size; v++)
+  {
+    if (varset[v] < 0) continue;       
+    if (print_and) fprintf(tl_out, " & ");
+    if (varset[v] == 0)
+      fprintf(tl_out, "!%d", v);
+    else
+      fprintf(tl_out, "%d", v);
+    print_and = 1;
+  }
+  fprintf(tl_out, ")");
+  print_or = 1;
+}
+
+void print_alternating_hoaf_state(const cset& set,
+                                  const map<int, int>& astate2Int,
+                                  int true_state) {
+  if (set.empty()) {
+    fprintf(tl_out, "%d", true_state);
+  } else {
+    int *list = set.to_list();
+    for(int i = 1; i < list[0]; i++) {
+      if (i > 1)
+        fprintf(tl_out, "&");
+      fprintf(tl_out, "%d", astate2Int.find(list[i])->second);
+    }
+    tfree(list);
+  }
+}
+
+void print_alternating_hoaf_header(int states,
+                                   const map<int, int>& astate2Int) {
+  fprintf(tl_out, "HOA: v1\n");
+  fprintf(tl_out, "tool: \"ltl3dra\" \"%s\"\n", VERSION_NUM);
+  fprintf(tl_out, "name: \"VWAA for ");
+  put_uform();
+  fprintf(tl_out, "\"\n");
+  fprintf(tl_out, "States: %d\n", states);
+  if (states > 0) {
+    if (transition[0]) {
+      map<cset, ATrans*>::iterator t;
+      for(t = transition[0]->begin(); t != transition[0]->end(); t++) {
+        fprintf(tl_out, "Start: ");
+        print_alternating_hoaf_state(t->first, astate2Int, states-1);
+        fprintf(tl_out, "\n");
+      }
+    }
+    fprintf(tl_out, "acc-name: co-Buchi\n");
+    fprintf(tl_out, "Acceptance: 1 Fin(0)\n");
+    fprintf(tl_out, "AP: %d", predicates);
+    for (int i = 0; i < predicates; ++i) {
+      fprintf(tl_out, " \"%s\"", sym_table[i]);
+    }
+    fprintf(tl_out, "\n");
+    fprintf(tl_out, "properties: trans-labels explicit-labels state-acc univ-branch very-weak\n");
+  } else {
+    fprintf(tl_out, "acc-name: none\n");
+    fprintf(tl_out, "Acceptance: 0 f\n");
+  }
+}
+
+void print_alternating_hoaf(){
+  map<cset, ATrans*>::iterator t;
+  map<int, int> astate2Int;
+  bool true_state = false;
+
+  astate_count = 0;
+  for(int i = node_id - 1; i >= 0; i--) {
+    if (transition[i]) {
+      // Count only normal states - transition[0] is the initial state.
+      if (i > 0)
+        astate2Int[i] = astate_count++;
+      if (!true_state) {
+        for(t = transition[i]->begin(); t != transition[i]->end(); t++) {
+          if (t->first.empty())
+            true_state = true;
+        }
+      }
+    }
+  }
+  
+  if (true_state)
+    astate_count++;
+
+  print_alternating_hoaf_header(astate_count, astate2Int);
+
+  fprintf(tl_out, "--BODY--\n");
+
+  for(int i = node_id - 1; i > 0; i--) {
+    if(!label[i])
+      continue;
+    fprintf(tl_out, "State: %d \"", astate2Int[i]);
+    dump(label[i]);
+    if (in_set(final_set, i))
+      fprintf(tl_out, "\" {0}\n");
+    else
+      fprintf(tl_out, "\"\n");
+    if (transition[i])
+      for(t = transition[i]->begin(); t != transition[i]->end(); t++) {
+        fprintf(tl_out, " [");
+        if (t->second->label == bdd_true()) {
+          fprintf(tl_out, "t");
+        } else {
+          print_or = 0;
+          bdd_allsat(t->second->label, allsatPrintHandler_hoaf);
+        }
+        fprintf(tl_out, "] ");
+        print_alternating_hoaf_state(t->first, astate2Int, astate_count-1);
+        fprintf(tl_out, "\n");
+      }
+  }
+  
+  if (true_state) {
+    fprintf(tl_out, "State: %d \"t\"\n [t] %d\n", astate_count-1, astate_count-1);
+  }
+
+  fprintf(tl_out, "--END--\n");
 }
 
 void print_alternating() /* dumps the alternating automaton */
@@ -1107,7 +1218,7 @@ void mk_alternating(Node *p) /* generates an alternating automaton for p */
     bdd_setvarnum(2);
   
   final_set = make_set(-1, 0);
-  if (!tl_determinize && !tl_det_m && !tl_tgba_out) {
+  if (!tl_determinize && !tl_det_m && tl_spot_out != 2) {
     transition[0] = boolean(p); /* generates the alternating automaton */
   } else {
     build_alternating(p); /* generates the alternating automaton */
@@ -1117,17 +1228,28 @@ void mk_alternating(Node *p) /* generates an alternating automaton for p */
     transition[0]->insert(pair<cset, ATrans*>(cset(already_done(p), 0), t));
   }
 
+  // Replace the estimation of the number of predicates with the exact value.
+  predicates = sym_id;
+
   if(tl_verbose) {
     fprintf(tl_out, "\nAlternating automaton before simplification\n");
-    print_alternating();
+    if (tl_verbose == 1)
+      print_alternating();
+    else
+      print_alternating_hoaf();
+    fprintf(tl_out, "\n");
   }
 
   if(tl_simp_diff || tl_dra_out) {
     simplify_astates(); /* keeps only accessible states */
     oteckuj(nodes_num);
     if(tl_verbose) {
-      fprintf(tl_out, "\nAlternating automaton after simplification\n");
-      print_alternating();
+      fprintf(tl_out, "Alternating automaton after simplification\n");
+      if (tl_verbose == 1)
+        print_alternating();
+      else
+        print_alternating_hoaf();
+      fprintf(tl_out, "\n");
     }
   } else {
     oteckuj(nodes_num);
@@ -1148,7 +1270,11 @@ void mk_alternating(Node *p) /* generates an alternating automaton for p */
  
   if(tl_dra_out)
     Z_set = compute_Z_set();
+    
+  if (tl_hoaf == 1) {
+    print_alternating_hoaf();
+  }
 
-  if (!tl_tgba_out && !tl_ba_out)
+  if (tl_spot_out != 2 && tl_hoaf != 2)
     tfree(label);
 }

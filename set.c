@@ -299,12 +299,12 @@ int *list_set(int *l, int type) /* transforms a set into a list */
   for(i = 0; i < set_size(type); i++)
     for(j = 0; j < mod; j++) 
       if(l[i] & (1 << j))
-  size++;
+        size++;
   list = (int *)tl_emalloc(size * sizeof(int));
   list[0] = size;
   size = 1;
   for(i = 0; i < set_size(type); i++)
-    for(j = 0; j < mod; j++) 
+    for(j = 0; j < mod; j++)
       if(l[i] & (1 << j))
         list[size++] = mod * i + j;
   return list;

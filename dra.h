@@ -18,10 +18,10 @@ class DRAstate {
     
     
   public:
-    std::set<cset> sets;
+    std::set<cset> sets; // The set of configurations
   
     int id;
-    int incoming;
+    int incoming; // The number of incoming transitions(edges)
     DRAstate* sub; // substitute
     
     std::map<DRAstate*, DRAtrans>* trans;
@@ -56,6 +56,10 @@ struct DRAstateComp {
 };
 
 class GenCond {
+    // A GenCond object serves to store information about one pair of a TGDRA acc. condition for one transition.
+    // A gen. Rabin pair (F,{I_1,I_2,...,I_n}) is satisfied, if a run visits F only finitely many times and each
+    // of I_i infinitely many times. In a GenCond object we store information wheter the according transition is
+    // member of the F-set (the bool allowed), and whether it is a member of the I_i sets (the bool vector f_accepting)
   public:
     bool allowed;
     vector<bool> f_accepting;
@@ -76,6 +80,9 @@ typedef map<int, GenCond> GenCondMap_t;
 extern int DRAtrans_id;
 
 class DRAtrans {
+    // A DRAtrans is an adge in the TGDRA automaton. The edge can be divided into transitions.
+    // More transitions can be in the same accepting sets, they are than merged.
+    // A single-letter labelled transition is identified by trans.id;tgdra_acc;label
   private:
   
     // auxiliary functions
@@ -86,6 +93,7 @@ class DRAtrans {
     int id;
   
     DRAstate* to;
+    // Maps conditions to labels with that condition
     map<GenCondMap_t, bdd> conds_to_labels;
     
     DRAtrans(bdd l, const DRAstate* f, DRAstate* t) { to = t; id = DRAtrans_id++; insert_label(f, l); }

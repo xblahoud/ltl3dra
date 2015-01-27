@@ -28,7 +28,7 @@
 /* Verification, CAV 2001, Paris, France.                                 */
 /* Proceedings - LNCS 2102, pp. 53-65                                     */
 /*                                                                        */
-/* and on paper by                                                        */
+/* Modifications based on paper by                                        */
 /* T. Babiak, M. Kretinsky, V. Rehak, and J. Strejcek,                    */
 /* LTL to Buchi Automata Translation: Fast and More Deterministic         */
 /* presented at the 18th International Conference on Tools and            */
@@ -60,7 +60,7 @@ int tl_simp_fly  = 1; /* on the fly simplification */
 int tl_simp_scc  = 1; /* use scc simplification */
 int tl_fjtofj    = 1; /* 2eme fj */
 int tl_postpone  = 1; /* use suspension for TGBA construction */
-int tl_f_components = 0; /* use direct building of final TGBA components corresponding to GFp_1 && .. && GFp_n*/
+int tl_f_components = 1; /* use direct building of final TGBA components corresponding to GFp_1 && .. && GFp_n*/
 int tl_rem_scc   = 1; /* enable removing non-accepting strongly connected components */
 int tl_alt       = 1; /* use suspension for VWAA construction */
 int tl_rew_f     = 1; /* rewrite R formulae with alternating subformulae */
@@ -71,8 +71,8 @@ int tl_bisim_r   = 0; /* enable basic bisimulatin reduction of BA and repeat unt
 int tl_sim       = 0; /* enable strong fair simulation reduction of BA */
 int tl_sim_r     = 0; /* enable strong fair simulation reduction of BA and repeat until there is no reduction */
 int tl_ltl3ba    = 1; /* enable some LTL3BA specific improvements */
-int tl_tgba_out  = 0;
-int tl_ba_out    = 0;
+int tl_spot_out  = 0; /* enable output in SPOT format */
+int tl_hoaf      = 0; /* enable output in HOA format */
 #ifdef DRA
 int tl_dra_out   = 1;
 int tl_dra_alt   = 1;
@@ -143,7 +143,7 @@ usage(int estatus)
         printf(" -F file\tlike -f, but with the LTL ");
         printf("formula stored in a 1-line file\n");
         printf(" -d\t\tdisplay automata (D)escription at each step (VWAA, TGDRA, and DRA)\n");
-
+		printf(" -dH\t\tlike -d but automata are printed in HOA format\n");
         printf(" -l\t\tdisable (L)ogic formula simplification\n");
         printf(" -p\t\tdisable a-(P)osteriori simplification\n");
         printf(" -o\t\tdisable (O)n-the-fly simplification\n");
@@ -158,6 +158,13 @@ usage(int estatus)
 //        printf(" -M\t\ttry to produce more deter(M)inistic automaton (recomended)\n");
 //        printf(" -B\t\tenable basic (B)isimulation reduction of BA\n");
 //        printf(" -S\t\tenable strong fair (S)imulation reduction of BA\n");
+		printf(" -H[1|2|3]\tbuild and output the specified automaton in HOA format:\n");
+        printf("   \t\t  1 - build the VWAA\n");
+        printf("   \t\t  2 - build the TGBA\n");
+        printf("   \t\t  3 - build the BA (default, used when no number is specified)\n");
+        printf(" -T[2|3]\tbuild and output the specified automaton in SPOT format:\n");
+        printf("   \t\t  2 - build the TGBA (default, used when no number is specified)\n");
+        printf("   \t\t  3 - build the BA\n");
         printf(" -X\t\tdisable modified construction of VWAA (use GXF, FXG instead of GF and FG)\n");
         printf(" -O\t\tdisable optimizations of accepting sets of TGDRA\n");
         printf(" -I\t\tuse different definition of allowed transitions of TGDRA (c_1 \\in m_1)\n");
@@ -169,7 +176,6 @@ usage(int estatus)
         printf(" -h\t\tprint this help\n");
         printf("\n  act-like LTL3BA options:\n");
         printf(" -T\t\tconstruct only the TGBA and output it in SPOT's format - act like ltl3ba in default setting\n");
-        printf(" -U\t\toutput BA in SPOT's format - act like ltl3ba in default setting\n");
         printf(" -B\t\toutput BA as never claim - act like ltl3ba in default setting\n");
 
         alldone(estatus);
@@ -198,6 +204,13 @@ tl_main(std::string &argv)
 	return tl_errs;
 }
 
+void
+unknown_option(const char* str)
+{
+  printf("ltl3ba: unknown option -- %s\n\n", str);
+  usage(1);
+}
+
 int
 main(int argc, char *argv[])
 {	int i;
@@ -214,7 +227,12 @@ main(int argc, char *argv[])
                 case 'o': tl_simp_fly = 0; break;
                 case 'p': tl_simp_diff = 0; break;
                 case 'l': tl_simp_log = 0; break;
-                case 'd': tl_verbose = 1; break;
+                case 'd': tl_verbose = ((*(argv[1]+2) == '\0') ? 1 : ((*(argv[1]+2) == 'H') ? 2 : 3));
+                  if (tl_verbose  < 1 || 2 < tl_verbose || strlen(argv[1]+1) > 2) {
+                    unknown_option(argv[1]+1);
+                  }
+                  break;
+
 //                case 'M': tl_det_m = 1; break;
 //                case 'P': tl_postpone = 0; break;
 //                case 'D': tl_f_components = 0; break;
@@ -239,12 +257,22 @@ main(int argc, char *argv[])
                 case 'v': print_version(); alldone(0);
                 case 'h': usage(0); break;
 #endif
-                case 'T': tl_tgba_out = 1; tl_ba_out = 0; tl_dra_out = 0; tl_alt = 1; break;
-                case 'U': tl_ba_out = 1; tl_tgba_out = 0; tl_dra_out = 0; tl_alt = 1; break;
+                case 'H': tl_hoaf = (*(argv[1]+2) == '\0' ? 3 : atoi(argv[1]+2));
+                  if (0 < tl_hoaf  && tl_hoaf < 4 && strlen(argv[1]+1) < 3) {
+                    tl_spot_out = 0;
+                  } else {
+                    unknown_option(argv[1]+1);
+                  }
+                  break;
+                case 'T': tl_spot_out = (*(argv[1]+2) == '\0' ? 2 : atoi(argv[1]+2));
+                  if (1 < tl_spot_out && tl_spot_out < 4 && strlen(argv[1]+1) < 3) {
+                    tl_hoaf = 0;tl_dra_out = 0;tl_alt = 1;
+                  } else {
+                    unknown_option(argv[1]+1);
+                  }
+                  break;
                 case 'B': tl_dra_out = 0; tl_alt = 1; break;
-
-                //case 'x': tl_postpone = 0; tl_f_components = 0; tl_ltl3ba = 0; tl_rem_scc = 0; tl_alt = 0; tl_rew_f = 0; break;
-                default : printf("ltl3dra: unknown option -- %c\n\n", argv[1][1]); usage(1); break;
+                default : unknown_option(argv[1]+1); break;
                 }
                 argc--, argv++;
         }
@@ -255,13 +283,21 @@ main(int argc, char *argv[])
         }
 
         if (!ltl_file.empty())
-        {       std::ifstream in_file(ltl_file.c_str(), std::ifstream::in);
-                if (!in_file.is_open())
-                {       printf("ltl3dra: cannot open %s\n", ltl_file.c_str());
-                        alldone(1);
+        {
+                if (ltl_file == "-")
+                {
+                        std::getline(std::cin, add_ltl, '\0');
                 }
-                std::getline(in_file, add_ltl, '\0');
-                in_file.close();
+                else
+                {
+                        std::ifstream in_file(ltl_file.c_str(), std::ifstream::in);
+                        if (!in_file.is_open())
+                        {       printf("ltl3ba: cannot open %s\n", ltl_file.c_str());
+                                alldone(1);
+                        }
+                        std::getline(in_file, add_ltl);
+                        in_file.close();
+                }
         }
         if (argc > 1)
         {       usage(1);

@@ -65,7 +65,7 @@ extern map<cset, ATrans*> **transition;
 
 extern int tl_verbose, tl_stats, tl_simp_diff, tl_simp_fly, tl_fjtofj, tl_ltl3ba,
   tl_simp_scc, *final_set, node_id, tl_postpone, tl_f_components, tl_rem_scc, node_size,
-  tl_det_m, print_or, tl_tgba_out;
+  tl_det_m, print_or, tl_spot_out, tl_hoaf, predicates;
 extern char **sym_table;
 extern Node **label;
 
@@ -993,14 +993,16 @@ void print_tgba_acc_set(const cset& set) {
   
   for(i = 1; i < list[0]; i++)
     print_tgba_acc(list[i]);
+  
+  tfree(list);
 }
 
-void print_tgba_state_name(const cset* set) {
+void print_tgba_state_name(const cset* set, bool is_hoaf) {
   int* list = set->to_list();
   int i;
   
   if (list[0] <= 1) {
-    fprintf(tl_out, "\"1\"");
+    fprintf(tl_out, (is_hoaf ? "\"t\"" : "\"1\""));
   } else {
     fprintf(tl_out, "\"");
     for(i = 1; i < list[0];) {
@@ -1020,9 +1022,9 @@ void print_tgba_all_transitions_of(const GState* s) {
 
   for(t = s->trans->begin(); t != s->trans->end(); t++) {
     for(t2 = t->second.begin(); t2 != t->second.end(); t2++) {
-      print_tgba_state_name(s->nodes_set);
+      print_tgba_state_name(s->nodes_set, false);
       fprintf(tl_out, ", ");
-      print_tgba_state_name(t->first->nodes_set);
+      print_tgba_state_name(t->first->nodes_set, false);
       fprintf(tl_out, ", \"");
       if (t2->second == bdd_true()) {
         fprintf(tl_out, "1");
@@ -1056,7 +1058,7 @@ void print_tgba() {
     for(i = 0; i < init_size; i++)
       if(init[i]) {
         fprintf(tl_out, " ");
-        print_tgba_state_name(init[i]->nodes_set);
+        print_tgba_state_name(init[i]->nodes_set, false);
       }
     fprintf(tl_out, ";\n");
   }
@@ -1072,6 +1074,100 @@ void print_tgba() {
     if (s->incoming == 0)
       print_tgba_all_transitions_of(s);
   }
+}
+
+void print_generalized_hoaf_acc_set(const cset& set,
+                                    const map<int, int>& final2Int) {
+  int *list = set.to_list();
+  if (list[0] > 1)
+    fprintf(tl_out, "{");
+  for(int i = 1; i < list[0]; i++) {
+    if (i > 1)
+      fprintf(tl_out, " ");
+    fprintf(tl_out, "%d", final2Int.find(list[i])->second);
+  }
+  if (list[0] > 1)
+    fprintf(tl_out, "}");
+  tfree(list);
+}
+
+void print_generalized_hoaf_header(int states,
+                                   int init_states,
+                                   const map<int, int>& final2Int,
+                                   const map<GState*, int>& gstate2Int) {
+  fprintf(tl_out, "HOA: v1\n");
+  fprintf(tl_out, "tool: \"ltl3ba\" \"%s\"\n", VERSION_NUM);
+  fprintf(tl_out, "name: \"TGBA for ");
+  put_uform();
+  fprintf(tl_out, "\"\n");
+  fprintf(tl_out, "States: %d\n", states);
+  if (states > 0) {
+    for(int i = 0; i < init_states; i++)
+      fprintf(tl_out, "Start: %d\n", gstate2Int.find(init[i])->second);
+    fprintf(tl_out, "acc-name: generalized-Buchi %d\n", final2Int.size());
+    fprintf(tl_out, "Acceptance: %d", final2Int.size());
+    if (final2Int.size()>1) {
+      for(map<int, int>::const_iterator i = final2Int.begin(); i != final2Int.end(); i++) {
+        if (i != final2Int.begin())
+          fprintf(tl_out, " &");
+        fprintf(tl_out, " Inf(%d)", i->second);
+      }
+    } else {
+      fprintf(tl_out, " t");
+    }
+    fprintf(tl_out, "\n");
+    fprintf(tl_out, "AP: %d", predicates);
+    for (int i = 0; i < predicates; ++i) {
+      fprintf(tl_out, " \"%s\"", sym_table[i]);
+    }
+    fprintf(tl_out, "\n");
+    fprintf(tl_out, "properties: trans-labels explicit-labels trans-acc no-univ-branch\n");
+  } else {
+    fprintf(tl_out, "acc-name: none\n");
+    fprintf(tl_out, "Acceptance: 0 f\n");
+  }
+}
+
+void print_generalized_hoaf(){
+  GState *s;
+  map<GState*, map<cset, bdd>, GStateComp>::iterator t;
+  map<cset, bdd>::iterator t2;
+  map<int, int> final2Int;
+  map<GState*, int> gstate2Int;
+  
+  gstate_count = 0;
+  for(int i = 1; i < final[0]; i++) {
+    final2Int[final[i]] = gstate_count++;
+  }
+  gstate_count = 0;
+  for (s = gstates->prv; s != gstates; s = s->prv) {
+    gstate2Int[s] = gstate_count++;
+  }
+
+  print_generalized_hoaf_header(gstate_count, init_size, final2Int, gstate2Int);
+
+  fprintf(tl_out, "--BODY--\n");
+
+  for(s = gstates->prv; s != gstates; s = s->prv) {
+    fprintf(tl_out, "State: %d ", gstate2Int[s]);
+    print_tgba_state_name(s->nodes_set, true);
+    fprintf(tl_out, "\n");
+    for(t = s->trans->begin(); t != s->trans->end(); t++) {
+      for(t2 = t->second.begin(); t2 != t->second.end(); t2++) {
+        fprintf(tl_out, " [");
+        if (t2->second == bdd_true()) {
+          fprintf(tl_out, "t");
+        } else {
+          print_or = 0;
+          bdd_allsat(t2->second, allsatPrintHandler_hoaf);
+        }
+        fprintf(tl_out, "] %d ", gstate2Int[t->first]);
+        print_generalized_hoaf_acc_set(t2->first, final2Int);
+        fprintf(tl_out, "\n");
+      }
+    }
+  }
+  fprintf(tl_out, "--END--\n");
 }
 
 void init_empty_t() {
@@ -1166,8 +1262,12 @@ void mk_generalized()
   tfree(transition);
 
   if(tl_verbose) {
-    fprintf(tl_out, "\nGeneralized Buchi automaton before simplification\n");
-    print_generalized();
+    fprintf(tl_out, "Generalized Buchi automaton before simplification\n");
+    if (tl_verbose == 1)
+      print_generalized();
+    else
+      print_generalized_hoaf();
+    fprintf(tl_out, "\n");
   }
 
   if(tl_simp_diff) {
@@ -1181,12 +1281,19 @@ void mk_generalized()
     }
     
     if(tl_verbose) {
-      fprintf(tl_out, "\nGeneralized Buchi automaton after simplification\n");
-      print_generalized();
+      fprintf(tl_out, "Generalized Buchi automaton after simplification\n");
+      if (tl_verbose == 1)
+        print_generalized();
+      else
+        print_generalized_hoaf();
+      fprintf(tl_out, "\n");
     }
   }
   
-  if(tl_tgba_out) {
+  if(tl_hoaf == 2) {
+    print_generalized_hoaf();
+    tfree(label);
+  } else if(tl_spot_out == 2) {
     print_tgba();
     tfree(label);
   }

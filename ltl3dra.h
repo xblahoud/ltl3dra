@@ -41,7 +41,7 @@
 #include <map>
 
 /* Set LTL3DRA's version number */
-#define VERSION_NUM "0.1.1"
+#define VERSION_NUM "0.1.2 -- working copy"
 #define DRA
 
 class cset;
@@ -184,7 +184,9 @@ Symbol	*tl_lookup(char *);
 Symbol	*getsym(Symbol *);
 Symbol	*DoDump(Node *);
 
-char	*emalloc(int);	
+char	*emalloc(int);
+
+void put_uform(void);
 
 int	anywhere(int, Node *, Node *);
 int	dump_cond(Node *, Node *, int);
@@ -288,15 +290,16 @@ int has_X(Node *);
 }
 
 void allsatPrintHandler(char* , int);
+void allsatPrintHandler_hoaf(char* , int);
 
 class cset
 {
  public:
 
-   cset(void)          { this->type = 0; s = new_set(type); }
-   cset(int type)      { this->type = type; s = new_set(type); }
-   cset(int el, int type)      { this->type = type; s = make_set(el, type); }
-   cset(const cset &r) { this->type = r.type; s = dup_set(r.s, type); }
+   cset(void)           : type(0), s(new_set(0)) {};
+   cset(int t)          : type(t), s(new_set(t)) {};
+   cset(int el, int t)  : type(t), s(make_set(el, t)) {};
+   cset(const cset &r)  : type(r.type), s(dup_set(r.s, r.type)) {};
    
    ~cset(void)         { tfree(s); }
    
@@ -334,8 +337,6 @@ class cset
     int type;
     
     friend std::ostream &operator<<(std::ostream &, const cset &);
-
-
 };
 
 inline void cset::insert(int el) {
@@ -371,7 +372,7 @@ inline bool cset::operator!=(const cset &r) const {
 }
 
 inline bool cset::operator<(const cset &r) const {
-  return (type < r.type || (type == r.type && compare_sets_lexi(this->s, r.s, type)));
+  return (type < r.type || (type == r.type && compare_sets_lexi(s, r.s, type)));
 }
 
 inline void cset::print(void) const {
@@ -394,10 +395,10 @@ class AProd {
   public:
     
     AProd(void)
-      { prod = emalloc_atrans(); prod->label = bdd_true(); trans = (std::map<cset, ATrans*> *) 0; }
+      : prod(emalloc_atrans()), trans((std::map<cset, ATrans*> *) 0) { prod->label = bdd_true(); }
     AProd(int i, std::map<cset, ATrans*> *t) 
-      { prod = (ATrans *) 0; astate = i; trans = t; if (trans) { curr_trans = trans->begin(); last_trans = --trans->end();} }
-    ~AProd(void) {if (prod) free_atrans(prod, 0); }
+      : prod((ATrans *) 0), astate(i), trans(t) { if (trans) { curr_trans = trans->begin(); last_trans = --trans->end(); } }
+    ~AProd(void) { if (prod) free_atrans(prod, 0); }
 
     int astate;
     std::map<cset, ATrans*> *trans;
@@ -407,7 +408,7 @@ class AProd {
     AProd *nxt;
     AProd *prv;
     
-//    std::pair<const cset, ATrans*>* get_curr_trans();
+//    std::pair<const cset, ATrans*>& get_curr_trans();
     void merge_to_prod(AProd *p1, std::pair<const cset, ATrans*> &trans);
     void merge_to_prod(AProd *p1, int i);
     void next(void);
@@ -417,8 +418,8 @@ class AProd {
   private:
 };
 
-//inline std::pair<const cset, ATrans*>* AProd::get_curr_trans() {
-//  return &(*curr_trans);
+//inline std::pair<const cset, ATrans*>& AProd::get_curr_trans() {
+//  return *curr_trans;
 //}
 
 inline void AProd::next(void) {
@@ -436,7 +437,7 @@ inline bool AProd::no_next(void) {
 class cGTrans {
   public:
 //    cGTrans(void);
-//    cGTrans(const cGTrans &t) { trans = t.trans; }
+//    cGTrans(const cGTrans &t) : trans(t.trans) {};
 //    ~cGTrans(void);
 
 //    bool operator<(const cGTrans &t) const;
@@ -479,6 +480,9 @@ inline bool cGTrans::operator!=(const cGTrans &t) const {
 }
 
 //inline cGTrans& cGTrans::operator=(const cGTrans &t) {
+//  if (&t == this)
+//    return (*this);
+//
 //  trans = t.trans;
 //  return (*this);
 //}
