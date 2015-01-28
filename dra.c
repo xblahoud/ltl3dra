@@ -68,6 +68,7 @@ map<int, int> acc_to_pos;
 map<int, int> pos_to_acc;
 map<int, set<cset> > ACz;  // Allowed configurations for given Z-index?
 int hoaf_acc_count = 0;
+map<DRAstate*, int> state2Int; // Maps TGDRA states to their HOAF id
 
 typedef vector<vector<bool> > inclusionTable_t; // if inclusionTable_t[i][j]=true -> i \subseteq j
 vector<inclusionTable_t> condSubsets;
@@ -1071,28 +1072,6 @@ void remove_redundant_dra_init() {
 |*            Display of the generalized Rabin automaton            *|
 \********************************************************************/
 
-//void allsatPrintHandlerDRA(char* varset, int size)
-//{
-//  int print_and = 0;
-//  
-//  if (print_or) *where_os << " || ";
-//  *where_os << "(";
-//  for (int v=0; v<size; v++)
-//  {
-//    if (varset[v] < 0) continue;       
-//    if (print_and) *where_os << " && ";
-//    if (varset[v] == 0)
-////      *where_os << "!(" << sym_table[v] << ")";
-//      *where_os << "!" << sym_table[v];
-//    else
-////      *where_os << "(" << sym_table[v] << ")";
-//      *where_os << sym_table[v];
-//    print_and = 1;
-//  }
-//  *where_os << ")";
-//  print_or = 1;
-//}
-
 std::ostream& dra::operator<<(std::ostream &out, const DRAstate &r) {
   set<cset>::iterator i;
   cout << "[";
@@ -1104,7 +1083,6 @@ std::ostream& dra::operator<<(std::ostream &out, const DRAstate &r) {
   out << "]";
   return out;
 }
-
 
 std::ostream& dra::operator<<(std::ostream &out, const GenCond &c) {
   vector<bool>::const_iterator it;
@@ -1136,7 +1114,31 @@ void GenCond::print(std::ostream &out, int Z_i) const {
   out << "}>";
 }
 
-std::ostream& dra::operator<<(std::ostream &out, const DRAtrans &t) {
+bool GenCond::print_hoaf(std::ostream &out, int Z_i, bool first) const {
+  int f_counter = 0;
+  cset& z_set = IntToZ_set[Z_i];
+
+  if (!allowed) {
+    if (!first) {out << " ";}
+    if (first)  {out << "{"; first = false;}
+    out << Zindex_to_hoaf[Z_i].first;
+  }
+  for (int i = 0; i < f_accepting.size(); i++) {
+    if (!f_accepting[i])
+      continue;
+    if (z_set.is_elem(pos_to_acc[i]) &&
+        (!tl_dra_opt || !removedI_sets[Z_i-1].is_elem(pos_to_acc[i]) ) ) {
+      ++f_counter;
+      if (!first) {out << " ";}
+      if (first)  {out << "{"; first = false;}
+      out << Zindex_to_hoaf[Z_i].first + f_counter;
+    }
+  }
+  return first;
+}
+
+/* OLD OUTPUT TRANS*/
+/*std::ostream& dra::operator<<(std::ostream &out, const DRAtrans &t) {
   where_os = &out;
   map<GenCondMap_t, bdd>::const_iterator m_j;
 
@@ -1161,13 +1163,41 @@ std::ostream& dra::operator<<(std::ostream &out, const DRAtrans &t) {
     }
     out << endl;
   }
-  
+
+  return out;
+}*/
+
+std::ostream& dra::operator<<(std::ostream &out, const DRAtrans &t) {
+  where_os = &out;
+  map<GenCondMap_t, bdd>::const_iterator m_j;
+
+  // Each item of conds_to_labels represents an edge. Print the edges.
+  for (m_j = t.conds_to_labels.begin(); m_j != t.conds_to_labels.end(); m_j++) {
+    out << "[";
+    print_or = 0;
+    bdd label = m_j->second;
+
+    if (label == bdd_true())
+      out << "t";
+    else
+      bdd_allsat(label, allsatPrintHandler_hoaf);
+    out << "] " << state2Int[t.to] << " ";
+
+    GenCondMap_t::const_iterator z_i;
+    bool first_acc = true;
+    for(z_i=m_j->first.begin(); z_i!=m_j->first.end(); z_i++) {
+      first_acc = z_i->second.print_hoaf(out, z_i->first,first_acc);
+    }
+    if (!first_acc)
+      out << "}";
+    out << endl;
+  }
   return out;
 }
 
 void print_tgdra_hoaf_header(int states,
+                             map<DRAstate*, int> state2Int,
                              const map<int, pair<int, int> >& Zindex_to_hoaf
-                             //,const map<GState*, int>& gstate2Int
                              ) {
   cout << endl;
   cout << "HOA: v1" << endl;
@@ -1175,7 +1205,7 @@ void print_tgdra_hoaf_header(int states,
   cout << "name: \"TGDRA for " << uform << "\"" << endl;
   cout << "States: " << states << endl;
   if (states > 0) {
-    //cout << "Start: " << gstate2Int.find(dra_init)->second << endl;
+    cout << "Start: " << state2Int[dra_init] << endl;
     cout << "acc-name: generalized-Rabin " << Zindex_to_hoaf.size();
     for(map<int, pair<int, int> >::const_iterator i = Zindex_to_hoaf.begin(); i != Zindex_to_hoaf.end(); i++) {
       cout << " " << (i->second).second;
@@ -1213,9 +1243,17 @@ void print_dra(std::ostream &out) {
   set<DRAstate*, DRAstateComp>::iterator s_i;
   map<DRAstate*, DRAtrans>::iterator t_i;
 
-  out << "Init: " << dra_init->id << endl;
+  state2Int.clear();
+  // Create the mapping from TGDRAstates to their HOAF id.
+  int state_count = 0;
   for(s_i=drastates.begin(); s_i!=drastates.end(); s_i++) {
-    out << "state " << (*s_i)->id << ": " << *(*s_i) << endl;
+    state2Int[*s_i] = state_count++;
+  }
+  // Print the hoaf header
+  print_tgdra_hoaf_header(state_count,state2Int,Zindex_to_hoaf);
+  // Print states and their transitions
+  for(s_i=drastates.begin(); s_i!=drastates.end(); s_i++) {
+    out << "State " << state2Int[*s_i] << ": " << *(*s_i) << endl;
     for(t_i=(*s_i)->trans->begin(); t_i!=(*s_i)->trans->end(); t_i++) {
       out << t_i->second;
     }
@@ -1403,7 +1441,6 @@ void mk_dra() {
   if (tl_verbose) {
     fprintf(tl_out, "\nTGDRA automaton\n");
     print_dra(cout);
-    print_tgdra_hoaf_header(drastates.size(),Zindex_to_hoaf);
   }
 }
 

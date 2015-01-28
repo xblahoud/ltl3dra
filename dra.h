@@ -73,6 +73,7 @@ class GenCond {
     
     friend std::ostream &operator<<(std::ostream &out, const GenCond &t);
     void print(std::ostream &out, int Z_i) const;
+    bool print_hoaf(std::ostream &out, int Z_i, bool first) const;
 };
 
 typedef map<int, GenCond> GenCondMap_t;
