@@ -56,10 +56,10 @@ struct DRAstateComp {
 };
 
 class GenCond {
-    // A GenCond object serves to store information about one pair of a TGDRA acc. condition for one transition.
-    // A gen. Rabin pair (F,{I_1,I_2,...,I_n}) is satisfied, if a run visits F only finitely many times and each
-    // of I_i infinitely many times. In a GenCond object we store information wheter the according transition is
-    // member of the F-set (the bool allowed), and whether it is a member of the I_i sets (the bool vector f_accepting)
+    /* A GenCond object serves to store information about one pair of a TGDRA acc. condition for one transition.
+    * A gen. Rabin pair (F,{I_1,I_2,...,I_n}) is satisfied, if a run visits F only finitely many times and each
+    * of I_i infinitely many times. In a GenCond object we store information wheter the according transition is
+    * member of the F-set (the bool allowed), and whether it is a member of the I_i sets (the bool vector f_accepting) */
   public:
     bool allowed;
     vector<bool> f_accepting;
@@ -80,7 +80,7 @@ typedef map<int, GenCond> GenCondMap_t;
 extern int DRAtrans_id;
 
 class DRAtrans {
-    // A DRAtrans is an adge in the TGDRA automaton. The edge can be divided into transitions.
+    // A DRAtrans represent multiple edges in TGDRA automaton between a pair of states. The edge can be divided into transitions.
     // More transitions can be in the same accepting sets, they are than merged.
     // A single-letter labelled transition is identified by trans.id;tgdra_acc;label
   private:

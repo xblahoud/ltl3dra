@@ -63,10 +63,11 @@ list<bdd> det_constraints;
 extern set<cset> Z_set;
 map<cset, int> Z_setToInt;
 map<int, cset> IntToZ_set;
-map<int, int> Zindex_to_hoaf;
+map<int, pair<int,int> > Zindex_to_hoaf;
 map<int, int> acc_to_pos;
 map<int, int> pos_to_acc;
 map<int, set<cset> > ACz;  // Allowed configurations for given Z-index?
+int hoaf_acc_count = 0;
 
 typedef vector<vector<bool> > inclusionTable_t; // if inclusionTable_t[i][j]=true -> i \subseteq j
 vector<inclusionTable_t> condSubsets;
@@ -376,15 +377,16 @@ GenCondMap_t DRAtrans::evaluate_acc_cond(const DRAstate* from, bdd label) {
 void compute_allowed_conf() {
   set<cset>::iterator s_i, s_j;
   int *list, i, j = 1;
-  int hoaf = 0; cset hoaf_acc;
+  cset hoaf_acc;
   cset must, may;
   
   for (s_i = Z_set.begin(); s_i != Z_set.end(); s_i++) {
     Z_setToInt.insert(make_pair(*s_i, j));
     IntToZ_set.insert(make_pair(j, *s_i));
-    Zindex_to_hoaf.insert(make_pair(j,hoaf));
     hoaf_acc.intersect_sets(*s_i, final_set);
-    hoaf += hoaf_acc.size() + 1;
+    int inf_sets = (hoaf_acc).size();
+    Zindex_to_hoaf.insert(make_pair(j,make_pair(hoaf_acc_count,inf_sets)));
+    hoaf_acc_count += inf_sets + 1;
     must.intersect_sets(*s_i, must_nodes);
     may.substract(*s_i, must);
     list = may.to_list();
@@ -795,6 +797,9 @@ void make_DRAtrans(const DRAstate* s) {
 \********************************************************************/
 
 void remove_redundant_acc_conds(list<int>& toBeRemoved) {
+  //toBeRemoved is a list of Z-indices, started by 1.
+
+  // Erase the acc condition from transitions
   set<DRAstate*, DRAstateComp>::iterator s_i;
   map<DRAstate*, DRAtrans>::iterator t_i;
   
@@ -802,6 +807,20 @@ void remove_redundant_acc_conds(list<int>& toBeRemoved) {
     for(t_i=(*s_i)->trans->begin(); t_i!=(*s_i)->trans->end(); t_i++) {
       t_i->second.remove_redundant_acc_conds(toBeRemoved);
     }
+  }
+
+  // Update the information for HOAF output
+  list<int>::iterator z_i;
+  map<int, pair<int, int> >::iterator hz_i;
+
+  for(z_i = toBeRemoved.begin(); z_i != toBeRemoved.end(); z_i++) {
+    for(hz_i = Zindex_to_hoaf.begin(); hz_i != Zindex_to_hoaf.end(); hz_i++) {
+        if (hz_i->first <= *z_i)
+          continue;
+        (hz_i->second).first -= Zindex_to_hoaf[*z_i].second + 1;
+    }
+    hoaf_acc_count -= Zindex_to_hoaf[*z_i].second + 1;
+    Zindex_to_hoaf.erase(*z_i);
   }
 }
 
@@ -837,6 +856,7 @@ void remove_redundant_acc_I_sets() {
   cset fin_states;
   for (i = 0; i<Z_set.size(); i++) {
     if (!isRemoved[i]) {
+      int removed_for_this_Z = 0;
       fin_states.intersect_sets(IntToZ_set[i+1], final_set);
       if (fin_states.size() > 1) {
         int* list = fin_states.to_list();
@@ -847,15 +867,28 @@ void remove_redundant_acc_I_sets() {
             if (condSubsets[i][I_j][I_k] ) {
               // I_j \subseteq I_k -> I_k can be removed
               removedI_sets[i].insert(list[k]);
+              removed_for_this_Z++;
             } else if (condSubsets[i][I_k][I_j]) {
               // I_k \subseteq I_j -> I_j can be removed
               removedI_sets[i].insert(list[j]);
+              removed_for_this_Z++;
             }
           }
         }
         if (list)
           tfree(list);
       }
+      // Update the information for HOAF output
+      map<int, pair<int, int> >::iterator hz_i;
+
+      Zindex_to_hoaf[i+1].second -= removed_for_this_Z;
+
+      for(hz_i = Zindex_to_hoaf.begin(); hz_i != Zindex_to_hoaf.end(); hz_i++) {
+          if (hz_i->first <= i+1)
+            continue;
+          (hz_i->second).first -= removed_for_this_Z;
+      }
+      hoaf_acc_count -= removed_for_this_Z;
     }
   }
 }
@@ -1027,6 +1060,7 @@ void remove_redundant_dra_init() {
         delete dra_init;
         // Set new initial state
         dra_init = s;
+        remove_redundant_dra_init();
         return;
       }
     }
@@ -1074,7 +1108,7 @@ std::ostream& dra::operator<<(std::ostream &out, const DRAstate &r) {
 
 std::ostream& dra::operator<<(std::ostream &out, const GenCond &c) {
   vector<bool>::const_iterator it;
-
+//
   out << "<" << (c.allowed?"+":"-") << ",{";
   for (it = c.f_accepting.begin(); it != c.f_accepting.end(); it++) {
     if (it != c.f_accepting.begin())
@@ -1132,21 +1166,31 @@ std::ostream& dra::operator<<(std::ostream &out, const DRAtrans &t) {
 }
 
 void print_tgdra_hoaf_header(int states,
-                             const map<int, int>& Zindex_to_hoaf,
-                             const map<GState*, int>& gstate2Int) {
+                             const map<int, pair<int, int> >& Zindex_to_hoaf
+                             //,const map<GState*, int>& gstate2Int
+                             ) {
+  cout << endl;
   cout << "HOA: v1" << endl;
-  cout << "tool: \"ltl3dra\"" << VERSION_NUM << endl;
-  cout << "name: \"TGBA for " << uform << "\"" << endl;
+  cout << "tool: \"ltl3dra\" \"" << VERSION_NUM << "\"" << endl;
+  cout << "name: \"TGDRA for " << uform << "\"" << endl;
   cout << "States: " << states << endl;
   if (states > 0) {
     //cout << "Start: " << gstate2Int.find(dra_init)->second << endl;
-    cout << "acc-name: generalized-Rabin " << Zindex_to_hoaf.size() << endl;
-    cout << "Acceptance: " << Zindex_to_hoaf.size() << endl;
+    cout << "acc-name: generalized-Rabin " << Zindex_to_hoaf.size();
+    for(map<int, pair<int, int> >::const_iterator i = Zindex_to_hoaf.begin(); i != Zindex_to_hoaf.end(); i++) {
+      cout << " " << (i->second).second;
+    }
+    cout << endl;
+    cout << "Acceptance: " << hoaf_acc_count ;
     if (Zindex_to_hoaf.size()>0) {
-      for(map<int, int>::const_iterator i = Zindex_to_hoaf.begin(); i != Zindex_to_hoaf.end(); i++) {
+      for(map<int, pair<int, int> >::const_iterator i = Zindex_to_hoaf.begin(); i != Zindex_to_hoaf.end(); i++) {
         if (i != Zindex_to_hoaf.begin())
-          cout << " &";
-        cout << " Fin(" << i->second << ")";
+          cout << " |";
+        cout << " (Fin(" << (i->second).first << ")";
+        for (int j = 1; j <= (i->second).second; ++j) {
+          cout << "&Inf(" << (i->second).first + j << ")";
+        }
+        cout << ")";
       }
     } else {
       cout << " f";
@@ -1359,6 +1403,7 @@ void mk_dra() {
   if (tl_verbose) {
     fprintf(tl_out, "\nTGDRA automaton\n");
     print_dra(cout);
+    print_tgdra_hoaf_header(drastates.size(),Zindex_to_hoaf);
   }
 }
 
