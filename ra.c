@@ -28,12 +28,14 @@ using namespace dra;
 |*              Structures and shared variables                     *|
 \********************************************************************/
 
-extern int tl_verbose, print_or, *final_set, *final, tl_dra_opt, tl_simp_diff,
-tl_dra_goal, tl_dra_stats;
+extern int tl_verbose, tl_hoaf, tl_spot_out, tl_dra_ltl2dstar, print_or, *final_set, *final, tl_dra_opt, tl_simp_diff,
+tl_dra_goal, tl_dra_stats,
+predicates;
 static std::ostream* where_os;
 static std::ostream* gout;
 
 extern FILE *tl_out;
+extern std::string uform;
 
 // GOAL output
 extern std::ostream *goal_output;
@@ -47,6 +49,7 @@ extern list<bdd> det_constraints;
 extern set<cset> Z_set;
 extern map<cset, int> Z_setToInt;
 extern map<int, cset> IntToZ_set;
+extern map<int, pair<int,int> > Zindex_to_hoaf;
 extern map<int, int> acc_to_pos;
 extern map<int, int> pos_to_acc;
 
@@ -68,8 +71,11 @@ extern vector<cset> removedI_sets;
 extern vector<bool> isRemoved;
 extern int removedConds;
 
+// HOAF and ltl2dstar output
 map<int,RAstate*> dstarMap;
 map<int,int> id2dstar;
+map<RAstate*,int> rastate2Int;
+extern map<DRAstate*,int> state2Int;
 
 list<RAstate*> init_copies;
 
@@ -316,6 +322,7 @@ void remove_redundant_ra_init() {
 |*                  Display of the Rabin automaton                  *|
 \********************************************************************/
 
+/*
 std::ostream& dra::operator<<(std::ostream &out, const RAstate &r) {
   int i;
   bool start = true;
@@ -334,8 +341,68 @@ std::ostream& dra::operator<<(std::ostream &out, const RAstate &r) {
   }
   out << ">]";
   return out;
+} */
+
+std::ostream& dra::operator<<(std::ostream &out, const RAstate &r) {
+  int i;
+
+  if (tl_verbose == 2 || tl_hoaf > 2) {
+      bool first_level = true;
+      bool first_acc = true;
+      int level_counter = 0;
+
+      out << "\"[" << state2Int[r.d_state] << ":<";
+      for (i = 0; i < levels_num; i++) {
+          // Skip removed conditions
+          if (tl_dra_opt && isRemoved[i])
+              continue;
+          if (!first_level) {out << ",";}
+          if (first_level)  {first_level = false;}
+          out << r.levels[i];
+      }
+      out << ">]\" ";
+
+      //Accepting
+      for (i = 0; i < levels_num; i++) {
+          // Skip removed conditions
+          if (tl_dra_opt && isRemoved[i])
+              continue;
+          if(r.levels[i] == -1) {
+              if (!first_acc) {out << " ";}
+              if (first_acc) {out << "{"; first_acc = false;}
+              out << 2*level_counter;
+          }
+          if(r.levels[i] == accept_levels[i]) {
+              if (!first_acc) {out << " ";}
+              if (first_acc) {out << "{"; first_acc = false;}
+              out << 2*level_counter+1;
+          }
+          ++level_counter;
+      }
+      if (!first_acc)
+          out << "}";
+  } else {
+      int i;
+      bool start = true;
+
+      cout << r.id << ": [" << r.d_state->id << ":<";
+      for (i = 0; i < levels_num; i++) {
+        // Skip removed conditions
+        if (tl_dra_opt && isRemoved[i])
+          continue;
+        if (!start)
+          out << ",";
+        if(r.levels[i] == accept_levels[i])
+          out << "*";
+        out << r.levels[i];
+        start = false;
+      }
+      out << ">]";
+  }
+  return out;
 }
 
+/*
 std::ostream& dra::operator<<(std::ostream &out, const RAtrans &t) {
   where_os = &out;
   print_or = 0;
@@ -348,11 +415,96 @@ std::ostream& dra::operator<<(std::ostream &out, const RAtrans &t) {
   
   return out;
 }
+*/
 
-void print_ra(std::ostream &out) {
+std::ostream& dra::operator<<(std::ostream &out, const RAtrans &t) {
+  where_os = &out;
+  print_or = 0;
+
+  if (tl_verbose == 2 || tl_hoaf > 2) {
+    out << "[";
+    if (t.label == bdd_true())
+      out << "t";
+    else
+      bdd_allsat(t.label, allsatPrintHandler_hoaf);
+    out << "] " << rastate2Int[t.to];
+  } else {
+    if (t.label == bdd_true())
+      out << "(1)";
+    else
+      bdd_allsat(t.label, allsatPrintHandler);
+    out << " -> " << t.to->id << "\t";
+  }
+  return out;
+}
+
+void print_dra_hoaf_header(int states,
+                             map<RAstate*, int> rastate2Int,
+                             const map<int, pair<int, int> >& Zindex_to_hoaf,
+                           std::string ra_name = "RA"
+                             ) {
+  cout << endl;
+  cout << "HOA: v1" << endl;
+  cout << "tool: \"ltl3dra\" \"" << VERSION_NUM << "\"" << endl;
+  cout << "name: \"" << ra_name << " for " << uform << "\"" << endl;
+  cout << "States: " << states << endl;
+  if (states > 0) {
+    cout << "Start: " << rastate2Int[ra_init] << endl;
+    cout << "acc-name: Rabin " << Zindex_to_hoaf.size() << endl;
+    cout << "Acceptance: " << 2*Zindex_to_hoaf.size() << " ";
+    if (Zindex_to_hoaf.size()>0) {
+      for(int i = 0; i < Zindex_to_hoaf.size();++i) {
+        if (i > 0)
+          cout << " | ";
+        cout << "(Fin(" << 2*i << ")&Inf(" << 2*i + 1 << "))";
+      }
+    } else {
+      cout << " f";
+    }
+    cout << endl;
+    cout << "AP: " << predicates;
+    for (int i = 0; i < predicates; ++i) {
+      cout << " \"" << sym_table[i] << "\"";
+    }
+    cout << endl;
+    cout << "properties: deterministic trans-labels explicit-labels state-acc no-univ-branch" << endl;
+  } else {
+    cout << "acc-name: none" << endl;
+    cout << "Acceptance: 0 f" << endl;
+  }
+}
+
+
+void print_ra_hoaf(std::ostream &out, std::string name = "") {
+  rastate2Int.clear();
   set<RAstate*, RAstateComp>::iterator s_i;
   map<RAstate*, RAtrans>::iterator t_i;
+  // Create the mapping from DRAstates to their HOAF id.
+  int state_count = 0;
+  for(s_i=rastates.begin(); s_i!=rastates.end(); s_i++) {
+    rastate2Int[*s_i] = state_count++;
+  }
+  if (name != "") {
+    print_dra_hoaf_header(state_count,rastate2Int,Zindex_to_hoaf,name);
+  } else {
+    print_dra_hoaf_header(state_count,rastate2Int,Zindex_to_hoaf);
+  }
+  out << "--BODY--" << endl;
   
+  for(s_i=rastates.begin(); s_i!=rastates.end(); s_i++) {
+/*    out << "state " << (*s_i)->id << " : " << *(*s_i) << endl;*/
+    out << "State: " << rastate2Int[*s_i] << " " << *(*s_i) << endl;
+    for(t_i=(*s_i)->trans->begin(); t_i!=(*s_i)->trans->end(); t_i++) {
+      out << "  " << t_i->second << endl;
+    }
+  }
+  out << "--END--" << endl;
+}
+
+void print_ra_old(std::ostream &out) {
+  set<RAstate*, RAstateComp>::iterator s_i;
+  map<RAstate*, RAtrans>::iterator t_i;
+
   out << "Init: " << *ra_init << endl;
   for(s_i=rastates.begin(); s_i!=rastates.end(); s_i++) {
 /*    out << "state " << (*s_i)->id << " : " << *(*s_i) << endl;*/
@@ -701,9 +853,13 @@ void mk_ra()
   remove_redundant_ra_init();
   
   if (tl_verbose && tl_simp_diff && !tl_dra_stats) {
-    fprintf(tl_out, "\nDRA before optimization\n");
-    print_ra(cout);
-    fprintf(tl_out, "\n\nDRA after optimization\n");
+    if (tl_verbose == 1) {
+        cout << endl << endl << "DRA before simplification" << endl;
+        print_ra_old(cout);
+        cout << endl;
+    } else {
+    print_ra_hoaf(cout, "DRA before simplification");
+    }
   }
   
   if(tl_simp_diff) {
@@ -713,11 +869,21 @@ void mk_ra()
 
 //  if (!tl_dra_stats) {
 //  fprintf(tl_out, "\nDRA in internal format\n");
-  if (tl_verbose) {
-    print_ra(cout);
-    fprintf(tl_out, "\n\nDRA in ltl2dstar format\n");
+  if (tl_verbose == 1) {
+    cout << "DRA after simplification" << endl;
+    print_ra_old(cout);
+    cout << endl << endl << "DRA in ltl2dstar format" << endl << endl;
   }
-  print_ra_ltl2dstar(cout);
+
+  if (tl_spot_out == 3)
+    print_ra_old(cout);
+
+  if (tl_verbose == 2 || tl_hoaf == 3) {
+    print_ra_hoaf(cout);
+  }
+
+  if (tl_dra_ltl2dstar)
+    print_ra_ltl2dstar(cout);
 //  }
 
   if(tl_dra_goal) {

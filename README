@@ -121,7 +121,10 @@ Temporal operators:
 
 Use spaces between any symbols.
 
-The result is a DRA in ltl2dstar format v2.
+The result is a TGDRA in the HOA format v1.
+
+To produce a DRA in ltl2dstar format v2 run
+> ./ltl3dra -L -f "formula"
 
 run the command
 > ./ltl3dra

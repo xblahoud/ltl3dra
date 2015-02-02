@@ -259,7 +259,7 @@ GState *remove_gstate(GState *s, GState *s1) /* removes a state */
   s->nxt->prv = s->prv;
   delete s->trans;
   s->trans = (cGTrans *)0;
-//  delete s->nodes_set;
+//  delete s->nodes_set; // Do not delete so the order does not change.
 //  s->nodes_set = 0;
   s->nxt = gremoved->nxt;
   gremoved->nxt = s;
@@ -453,8 +453,8 @@ int gdfs(GState *s) {
   GScc *c;
   GScc *scc = (GScc *)tl_emalloc(sizeof(GScc));
   scc->gstate = s;
-  scc->rank = rank;
-  scc->theta = rank++;
+  scc->rank = ::rank;
+  scc->theta = ::rank++;
   scc->nxt = gscc_stack;
   gscc_stack = scc;
 
@@ -495,7 +495,7 @@ void simplify_gscc() {
   map<GState*, map<cset, bdd>, GStateComp>::iterator t1;
   map<cset, bdd>::iterator t2;
   int i, **scc_final;
-  rank = 1;
+  ::rank = 1;
   gscc_stack = 0;
   scc_id = 1;
 
@@ -1104,9 +1104,9 @@ void print_generalized_hoaf_header(int states,
   if (states > 0) {
     for(int i = 0; i < init_states; i++)
       fprintf(tl_out, "Start: %d\n", gstate2Int.find(init[i])->second);
-    fprintf(tl_out, "acc-name: generalized-Buchi %d\n", final2Int.size());
-    fprintf(tl_out, "Acceptance: %d", final2Int.size());
-    if (final2Int.size()>1) {
+    fprintf(tl_out, "acc-name: generalized-Buchi %u\n", final2Int.size());
+    fprintf(tl_out, "Acceptance: %u", final2Int.size());
+    if (final2Int.size() > 0) {
       for(map<int, int>::const_iterator i = final2Int.begin(); i != final2Int.end(); i++) {
         if (i != final2Int.begin())
           fprintf(tl_out, " &");

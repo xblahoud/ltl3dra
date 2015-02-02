@@ -72,7 +72,7 @@ int tl_sim       = 0; /* enable strong fair simulation reduction of BA */
 int tl_sim_r     = 0; /* enable strong fair simulation reduction of BA and repeat until there is no reduction */
 int tl_ltl3ba    = 1; /* enable some LTL3BA specific improvements */
 int tl_spot_out  = 0; /* enable output in SPOT format */
-int tl_hoaf      = 0; /* enable output in HOA format */
+int tl_hoaf      = 2; /* enable output in HOA format */
 #ifdef DRA
 int tl_dra_out   = 1;
 int tl_dra_alt   = 1;
@@ -81,6 +81,7 @@ int tl_dra_acc_imp = 1; /* enable improved accepting of TGDRA */
 int tl_dra_conf_dom = 0; /* enable configuration domination during TGDRA construction */
 int tl_dra_goal  = 0; /* Writes goal output into given file */
 int tl_dra_stats = 0; /* Prints only statistics about TGDRA and DRA */
+int tl_dra_ltl2dstar = 0;
 #endif
 int tl_errs      = 0;
 int tl_verbose   = 0;
@@ -139,32 +140,23 @@ usage(int estatus)
         printf("usage: ltl3dra [-flag] -f formula\n");
         printf("                   or -F file\n");
         printf(" -f \"formula\"\ttranslate LTL ");
-        printf("into DRA\n");
+        printf("into TGDRA\n");
         printf(" -F file\tlike -f, but with the LTL ");
         printf("formula stored in a 1-line file\n");
-        printf(" -d\t\tdisplay automata (D)escription at each step (VWAA, TGDRA, and DRA)\n");
+        printf(" -d\t\tdisplay automata (D)escription at each step (VWAA, TGDRA, and DRA) in the original LTL3DRA 0.1 format and DRA in ltl2dstar format\n");
 		printf(" -dH\t\tlike -d but automata are printed in HOA format\n");
         printf(" -l\t\tdisable (L)ogic formula simplification\n");
         printf(" -p\t\tdisable a-(P)osteriori simplification\n");
-        printf(" -o\t\tdisable (O)n-the-fly simplification\n");
-//        printf(" -c\t\tdisable strongly (C)onnected components simplification\n");
-//        printf(" -a\t\tdisable trick in (A)ccepting conditions\n");
-//        printf("\n  LTL3BA specific options:\n");
-//        printf(" -P\t\tdisable (P)ostponing/suspension in TGBA construction\n");
-//        printf(" -D\t\tdisable (D)irect building of final components\n");
-//        printf(" -C\t\tdisable removing non-accepting strongly (C)onnected components\n");
-//        printf(" -A\t\tdisable suspension in (A)lternating automaton construction\n");
-//        printf(" -R\t\tdisable rewriting R formulae with alternating subformulae\n");
-//        printf(" -M\t\ttry to produce more deter(M)inistic automaton (recomended)\n");
-//        printf(" -B\t\tenable basic (B)isimulation reduction of BA\n");
-//        printf(" -S\t\tenable strong fair (S)imulation reduction of BA\n");
+//        printf(" -o\t\tdisable (O)n-the-fly simplification\n");
 		printf(" -H[1|2|3]\tbuild and output the specified automaton in HOA format:\n");
-        printf("   \t\t  1 - build the VWAA\n");
-        printf("   \t\t  2 - build the TGBA\n");
-        printf("   \t\t  3 - build the BA (default, used when no number is specified)\n");
-        printf(" -T[2|3]\tbuild and output the specified automaton in SPOT format:\n");
-        printf("   \t\t  2 - build the TGBA (default, used when no number is specified)\n");
-        printf("   \t\t  3 - build the BA\n");
+        printf("   \t\t  1 - build the VWAA, MMAA for the LTL(Fs,Gs) fragment\n");
+        printf("   \t\t  2 - build the TGDRA (default)\n");
+        printf("   \t\t  3 - build the DRA\n");
+        printf(" -T[2|3]\tbuild and output the specified automaton in the original LTL3DRA 0.1 format:\n");
+        printf("   \t\t  1 - build the VWAA, MMAA for the LTL(Fs,Gs) fragment\n");
+        printf("   \t\t  2 - build the TGDRA (used also when the number is ommited)\n");
+        printf("   \t\t  3 - build the DRA\n");
+        printf(" -L\t\tbuild and output the DRAin ltl2dstar format v2\n");
         printf(" -X\t\tdisable modified construction of VWAA (use GXF, FXG instead of GF and FG)\n");
         printf(" -O\t\tdisable optimizations of accepting sets of TGDRA\n");
         printf(" -I\t\tuse different definition of allowed transitions of TGDRA (c_1 \\in m_1)\n");
@@ -224,26 +216,18 @@ main(int argc, char *argv[])
                           argc--; argv++; break;
 //                case 'a': tl_fjtofj = 0; break;
 //                case 'c': tl_simp_scc = 0; tl_rem_scc = 0; break;
-                case 'o': tl_simp_fly = 0; break;
+//                case 'o': tl_simp_fly = 0; break;
                 case 'p': tl_simp_diff = 0; break;
                 case 'l': tl_simp_log = 0; break;
                 case 'd': tl_verbose = ((*(argv[1]+2) == '\0') ? 1 : ((*(argv[1]+2) == 'H') ? 2 : 3));
                   if (tl_verbose  < 1 || 2 < tl_verbose || strlen(argv[1]+1) > 2) {
                     unknown_option(argv[1]+1);
                   }
+                  tl_hoaf = 0; tl_spot_out = 0;
+                  if (tl_verbose == 1) {
+                    tl_dra_ltl2dstar = 1;
+                  }
                   break;
-
-//                case 'M': tl_det_m = 1; break;
-//                case 'P': tl_postpone = 0; break;
-//                case 'D': tl_f_components = 0; break;
-//                case 'C': tl_rem_scc = 0; break;
-//                case 'A': tl_alt = 0; break;
-//                case 'R': tl_rew_f = 0; break;
-//                case 'm': tl_determinize   = 1; break;
-//                case 'b': tl_bisim = 1; break;
-//                case 'B': tl_bisim_r = 1; break;
-//                case 's': tl_sim = 1; break;
-//                case 'S': tl_sim_r = 1; break;
             #ifdef DRA
                 case 'X': tl_dra_alt = 0; tl_f_components = 0; break;
                 case 'O': tl_dra_opt = 0; break;
@@ -257,7 +241,7 @@ main(int argc, char *argv[])
                 case 'v': print_version(); alldone(0);
                 case 'h': usage(0); break;
 #endif
-                case 'H': tl_hoaf = (*(argv[1]+2) == '\0' ? 3 : atoi(argv[1]+2));
+                case 'H': tl_hoaf = (*(argv[1]+2) == '\0' ? 2 : atoi(argv[1]+2));
                   if (0 < tl_hoaf  && tl_hoaf < 4 && strlen(argv[1]+1) < 3) {
                     tl_spot_out = 0;
                   } else {
@@ -265,12 +249,13 @@ main(int argc, char *argv[])
                   }
                   break;
                 case 'T': tl_spot_out = (*(argv[1]+2) == '\0' ? 2 : atoi(argv[1]+2));
-                  if (1 < tl_spot_out && tl_spot_out < 4 && strlen(argv[1]+1) < 3) {
-                    tl_hoaf = 0;tl_dra_out = 0;tl_alt = 1;
+                  if (0 < tl_spot_out && tl_spot_out < 4 && strlen(argv[1]+1) < 3) {
+                    tl_hoaf = 0;
                   } else {
                     unknown_option(argv[1]+1);
                   }
                   break;
+                case 'L': tl_hoaf = 0; tl_spot_out = 0; tl_dra_ltl2dstar = 1; break;
                 case 'B': tl_dra_out = 0; tl_alt = 1; break;
                 default : unknown_option(argv[1]+1); break;
                 }

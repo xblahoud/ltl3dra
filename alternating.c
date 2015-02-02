@@ -59,6 +59,7 @@ using namespace std;
 extern FILE *tl_out;
 extern int tl_verbose, tl_stats, tl_simp_diff, tl_alt, tl_determinize, tl_det_m,
   tl_f_components, tl_spot_out, tl_hoaf, tl_dra_out, tl_dra_alt;
+extern std::string uform;
 
 Node **label;
 char **sym_table;
@@ -747,61 +748,59 @@ void print_alternating_hoaf_state(const cset& set,
                                   const map<int, int>& astate2Int,
                                   int true_state) {
   if (set.empty()) {
-    fprintf(tl_out, "%d", true_state);
+    cout << true_state;
   } else {
     int *list = set.to_list();
     for(int i = 1; i < list[0]; i++) {
       if (i > 1)
-        fprintf(tl_out, "&");
-      fprintf(tl_out, "%d", astate2Int.find(list[i])->second);
+        cout << "&";
+      cout << astate2Int.find(list[i])->second;
     }
     tfree(list);
   }
 }
 
 void print_alternating_hoaf_header(int states,
-                                   const map<int, int>& astate2Int) {
-  fprintf(tl_out, "HOA: v1\n");
-  fprintf(tl_out, "tool: \"ltl3dra\" \"%s\"\n", VERSION_NUM);
-  fprintf(tl_out, "name: \"VWAA for ");
-  put_uform();
-  fprintf(tl_out, "\"\n");
-  fprintf(tl_out, "States: %d\n", states);
+                                   const map<int, int>& astate2Int,
+                                   std::string name = "VWAA for ") {
+  cout << "HOA: v1" << endl;
+  cout << "tool: \"ltl3dra\" \"" << VERSION_NUM << "\"" << endl;
+  cout << "name: \"" << name << uform << "\"" << endl;
+  cout << "States: " << states << endl;
   if (states > 0) {
     if (transition[0]) {
       map<cset, ATrans*>::iterator t;
       for(t = transition[0]->begin(); t != transition[0]->end(); t++) {
-        fprintf(tl_out, "Start: ");
+        cout << "Start: ";
         print_alternating_hoaf_state(t->first, astate2Int, states-1);
-        fprintf(tl_out, "\n");
+        cout << endl;
       }
     }
-    fprintf(tl_out, "acc-name: co-Buchi\n");
-    fprintf(tl_out, "Acceptance: 1 Fin(0)\n");
-    fprintf(tl_out, "AP: %d", predicates);
+    cout << "acc-name: co-Buchi" << endl;
+    cout << "Acceptance: 1 Fin(0)" << endl;
+    cout << "AP: " << predicates;
     for (int i = 0; i < predicates; ++i) {
-      fprintf(tl_out, " \"%s\"", sym_table[i]);
+      cout << " \"" << sym_table[i] << "\"";
     }
-    fprintf(tl_out, "\n");
-    fprintf(tl_out, "properties: trans-labels explicit-labels state-acc univ-branch very-weak\n");
+    cout << endl;
+    cout << "properties: trans-labels explicit-labels state-acc univ-branch very-weak" << endl;
   } else {
-    fprintf(tl_out, "acc-name: none\n");
-    fprintf(tl_out, "Acceptance: 0 f\n");
-  }
+      cout << "acc-name: none" << endl;
+      cout << "Acceptance: 0 f" << endl;
+    }
 }
 
-void print_alternating_hoaf(){
+void print_alternating_hoaf(std::string name = ""){
   map<cset, ATrans*>::iterator t;
   map<int, int> astate2Int;
   bool true_state = false;
 
   astate_count = 0;
-  for(int i = node_id - 1; i >= 0; i--) {
-    if (transition[i]) {
-      // Count only normal states - transition[0] is the initial state.
-      if (i > 0)
-        astate2Int[i] = astate_count++;
-      if (!true_state) {
+  for(int i = node_id - 1; i > 0; i--) {
+    if (label[i]) {
+      // Count states.
+      astate2Int[i] = astate_count++;
+      if (!true_state && transition[i]) {
         for(t = transition[i]->begin(); t != transition[i]->end(); t++) {
           if (t->first.empty())
             true_state = true;
@@ -813,7 +812,11 @@ void print_alternating_hoaf(){
   if (true_state)
     astate_count++;
 
+  if (name != "") {
+      print_alternating_hoaf_header(astate_count, astate2Int, name);
+  } else {
   print_alternating_hoaf_header(astate_count, astate2Int);
+  }
 
   fprintf(tl_out, "--BODY--\n");
 
@@ -1056,7 +1059,6 @@ t_mm_pair cout_Z_explore_node(int node, bool is_must) {
         tl_explain(n->ntyp);
         break;
       }
-      set<cset>::iterator c_i;
 
       if (must.empty())
         must.insert(cset());
@@ -1114,7 +1116,7 @@ void oteckuj(int nodes_num) {
       }
     }
   
-  while (!is_empty(q)) {
+  while (!::is_empty(q)) {
     node = pop(q);
     rem_set(in_queue, node);
     n = label[node];
@@ -1232,24 +1234,24 @@ void mk_alternating(Node *p) /* generates an alternating automaton for p */
   predicates = sym_id;
 
   if(tl_verbose) {
-    fprintf(tl_out, "\nAlternating automaton before simplification\n");
-    if (tl_verbose == 1)
+    if (tl_verbose == 1) {
+      fprintf(tl_out, "\nAlternating automaton before simplification\n");
       print_alternating();
-    else
-      print_alternating_hoaf();
-    fprintf(tl_out, "\n");
+      fprintf(tl_out, "\n");
+    } else
+      print_alternating_hoaf("VWAA before simplification for ");
   }
 
   if(tl_simp_diff || tl_dra_out) {
     simplify_astates(); /* keeps only accessible states */
     oteckuj(nodes_num);
     if(tl_verbose) {
-      fprintf(tl_out, "Alternating automaton after simplification\n");
-      if (tl_verbose == 1)
+      if (tl_verbose == 1) {
+        fprintf(tl_out, "Alternating automaton after simplification\n");
         print_alternating();
-      else
+        fprintf(tl_out, "\n");
+      } else
         print_alternating_hoaf();
-      fprintf(tl_out, "\n");
     }
   } else {
     oteckuj(nodes_num);

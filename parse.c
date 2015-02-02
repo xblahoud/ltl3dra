@@ -36,7 +36,7 @@
 #include "ltl3dra.h"
 
 extern int	tl_yylex(void);
-extern int	tl_verbose, tl_simp_log, tl_rew_f, tl_determinize, tl_det_m;
+extern int	tl_verbose, tl_simp_log, tl_rew_f, tl_determinize, tl_det_m, tl_hoaf;
 extern void put_uform(void);
 
 int	tl_yychar = 0;
@@ -1015,7 +1015,7 @@ static Node* determ(Node *ptr) {
 void
 tl_parse(void)
 {       Node *n = tl_formula();
-        if (tl_verbose)
+        if (tl_verbose == 1)
 	{	printf("formula: ");
 		put_uform();
 		printf("\n");
