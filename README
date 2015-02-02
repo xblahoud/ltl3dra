@@ -1,6 +1,6 @@
 1. LICENSE
 
-LTL3DRA - Version 0.1 - August 2013
+LTL3DRA - Version 0.2 - February 2015
 Written by Tomas Babiak and Frantisek Blahoudek, FI MU, Brno, Czech Republic                          
 Copyright (c) 2013  Tomas Babiak and Frantisek Blahoudek
 
@@ -130,7 +130,20 @@ run the command
 > ./ltl3dra
 to see the possible options for executing the program
 
-4. BUGS
+4. TGDRA3DOT & TGDRA
+Since version 0.2 LTL3DRA comes with tgdra3dot and tgdra utilities.
+    tgdra3dot  - a perl utility that parses a output of 
+                 > ltl3dra -d -f "formula" command and produces a .dot
+                 file with the corresponding TGDRA.
+               - USAGE
+                 > ltl3dra -d -f "formula" | tgdra3dot
+    tgdra - translates given formula(s) by ltl3dra, converts the TGDRA(s)
+            into .dot file(s) and displays them using xdot
+          - requires perl and xdot
+          - USAGE
+            > tgdra -f "GFa"
+
+5. BUGS
 
 Please send bug-reports to xblahoud@fi.muni.cz
 

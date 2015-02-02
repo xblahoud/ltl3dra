@@ -1,0 +1,116 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Getopt::Long qw(:config no_ignore_case);
+
+## Parsing OPTIONS ##
+my $file;
+my $batch_file;
+my $formula = "";
+my $help = 0;
+my $timeout;
+my $multiline = 1;
+my $argI = 0; my $argO = 0; my $ltl3Args = " -d";
+
+GetOptions('formula|f=s' => \$formula,
+	   'file|F=s' => \$file, #'F=s' => \$file,
+	   'batch|b=s' => \$batch_file,
+	   'help|h' => \$help, 
+	   'timeout|t=s' => \$timeout,
+	   'multiline!' => \$multiline,
+	   'I' => \$argI, 'O' => \$argO);
+$ltl3Args .= " -I" if ($argI);
+$ltl3Args .= " -O" if ($argO);
+
+## Prints help and exits ##
+sub help {
+  print <<EOF;
+Usage: tgdra [OPTION...] [FILE...]
+
+Runs ltl3dra on the given formula and displays the automaton usind xdot
+
+Input options:
+  -f, --formula=STRING		process the formula STRING
+  -F, --file=PATH		reads LTL formula from file that contains one formula
+  -b, --batch=PATH		process file with more LTL formulas - one line one formula
+  
+Translation options:
+  -I				runs ltl3dra with -I option (disable allowed transitions modification);
+  -O				runs ltl3dra with -O option (disable optimization of acc. sets);
+  
+Miscelaneus options:
+  -h, --help			prints this help and exits
+  --multiline			files given as arguments are processed as given by -F OPTION (default)
+  --nomultiline			files given as arguments are processed as given by -b OPTION
+  -t, --timeout=STRING		sets timeout for translation to STRING (uses gnu timeout)
+EOF
+exit 0;
+}
+
+help() if $help;
+help() if ((@ARGV == 0) && !$file && !$formula && !$batch_file);
+
+sub run_one {
+  print "Creating automaton for formula $formula\n";
+  if ($timeout) {
+    system("timeout $timeout ltl3dra $ltl3Args -f \"$formula\" | tgdra3dot | xdot /dev/stdin &");
+  } else {
+    system("ltl3dra $ltl3Args -f \"$formula\" | tgdra3dot | xdot /dev/stdin &");
+  }
+}
+
+sub batch {
+  if (! -e $batch_file) {
+    print "The file $batch_file not found.\n";
+    exit 1;
+  }
+  my $count = `wc -l < $batch_file`; ## pocet radku
+  chomp ($count);
+  my $i = 1;
+  print "Processing the batch file $batch_file with $count formulas:\n";
+  open (BATCHFILE, $batch_file);
+  while (<BATCHFILE>) {
+    print "$i/$count: ";
+    chomp;
+    $formula = $_;
+    run_one; 
+    $i++;
+  }
+  close (BATCHFILE);
+}
+
+sub multi_file {
+  if (! -e $file) {
+    print "The file $file not found.\n";
+    exit 1;
+  }
+  print "Processing the formula from file $file:\n";
+  open (MYFILE, $file);
+  $formula = "";
+  
+  while (<MYFILE>) {
+    chomp;
+    $formula .= $_;
+  }
+  close (MYFILE);
+  run_one;
+}
+
+print "Timeout: $timeout\n" if ($timeout);
+run_one if $formula;
+multi_file if $file;
+batch if $batch_file;
+
+my $arg_file;
+foreach $arg_file (@ARGV) {
+  if ($multiline) {
+    $file = $arg_file;
+    multi_file;
+  } else {
+    $batch_file = $arg_file;
+    batch;
+  }
+}
+
+exit 0;
