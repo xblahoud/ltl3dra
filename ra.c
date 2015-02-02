@@ -441,9 +441,8 @@ std::ostream& dra::operator<<(std::ostream &out, const RAtrans &t) {
 void print_dra_hoaf_header(int states,
                              map<RAstate*, int> rastate2Int,
                              const map<int, pair<int, int> >& Zindex_to_hoaf,
-                           std::string ra_name = "RA"
+                           std::string ra_name = "DRA"
                              ) {
-  cout << endl;
   cout << "HOA: v1" << endl;
   cout << "tool: \"ltl3dra\" \"" << VERSION_NUM << "\"" << endl;
   cout << "name: \"" << ra_name << " for " << uform << "\"" << endl;
@@ -820,7 +819,6 @@ int get_acc_size() {
 
 void mk_ra() 
 {/* generates a Rabin automaton from the generalized Rabin automaton */
-
   levels_num = Z_set.size();
   accept_levels.resize(levels_num);
   finals_lists.resize(levels_num);
@@ -902,7 +900,8 @@ void mk_ra()
 //  }
 
   if(tl_dra_stats || tl_verbose) {
-    cout << endl << "-----------------------------------" << endl << endl;
+    if (tl_verbose)
+      cout << endl << "-----------------------------------" << endl << endl;
     cout << "States of TGDRA: " << drastates.size() << endl;
     cout << "Edges of TGDRA: " << get_dra_edges() << endl;
     cout << "Transitions of TGDRA: " << get_dra_trans() << endl;

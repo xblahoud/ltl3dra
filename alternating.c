@@ -1277,6 +1277,7 @@ void mk_alternating(Node *p) /* generates an alternating automaton for p */
     print_alternating_hoaf();
   }
 
-  if (tl_spot_out != 2 && tl_hoaf != 2)
+  if (tl_spot_out != 2 && tl_hoaf != 2 && tl_dra_out) {
     tfree(label);
+  }
 }

@@ -1194,9 +1194,12 @@ std::ostream& dra::operator<<(std::ostream &out, const DRAtrans &t) {
         first_acc = z_i->second.print_hoaf(out, z_i->first,first_acc);
       }
       if (!first_acc)
-        out << "}" << endl;
+        out << "}";
+      out << endl;
     }
-  } else {
+  }
+  // Print in the ltl3dra v0.1 format
+  else {
     for (m_j = t.conds_to_labels.begin(); m_j != t.conds_to_labels.end(); m_j++) {
       out << "\t";
       print_or = 0;

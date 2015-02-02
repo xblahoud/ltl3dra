@@ -167,7 +167,6 @@ usage(int estatus)
         printf(" -v\t\tprint LTL3DRA's version and exit\n");
         printf(" -h\t\tprint this help\n");
         printf("\n  act-like LTL3BA options:\n");
-        printf(" -T\t\tconstruct only the TGBA and output it in SPOT's format - act like ltl3ba in default setting\n");
         printf(" -B\t\toutput BA as never claim - act like ltl3ba in default setting\n");
 
         alldone(estatus);
@@ -236,7 +235,7 @@ main(int argc, char *argv[])
                 case 'G': tl_dra_goal = 1;
                   automaton = new std::ofstream(*(argv+2)); goal_output = new std::ostream(automaton->rdbuf());
                   argc--; argv++; break;
-                case 't': tl_dra_stats = 1; tl_verbose=0; break;
+                case 't': tl_dra_stats = 1; tl_verbose = 0; tl_hoaf = 0; tl_spot_out = 0; break;
 
                 case 'v': print_version(); alldone(0);
                 case 'h': usage(0); break;
@@ -249,14 +248,14 @@ main(int argc, char *argv[])
                   }
                   break;
                 case 'T': tl_spot_out = (*(argv[1]+2) == '\0' ? 2 : atoi(argv[1]+2));
-                  if (0 < tl_spot_out && tl_spot_out < 4 && strlen(argv[1]+1) < 3) {
+                  if (1 < tl_spot_out && tl_spot_out < 4 && strlen(argv[1]+1) < 3) {
                     tl_hoaf = 0;
                   } else {
                     unknown_option(argv[1]+1);
                   }
                   break;
                 case 'L': tl_hoaf = 0; tl_spot_out = 0; tl_dra_ltl2dstar = 1; break;
-                case 'B': tl_dra_out = 0; tl_alt = 1; break;
+                case 'B': tl_dra_out = 0; tl_dra_alt = 0; tl_hoaf = 0; tl_alt = 1; tl_det_m = 1; tl_sim_r = 1; break;
                 default : unknown_option(argv[1]+1); break;
                 }
                 argc--, argv++;
