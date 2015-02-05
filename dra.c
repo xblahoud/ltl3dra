@@ -1177,7 +1177,7 @@ std::ostream& dra::operator<<(std::ostream &out, const DRAtrans &t) {
   if (tl_verbose == 2 || tl_hoaf > 1) {
     // Each item of conds_to_labels represents an edge. Print the edges.
     for (m_j = t.conds_to_labels.begin(); m_j != t.conds_to_labels.end(); m_j++) {
-      out << "  [";
+      out << "\n  [";
       where_os = &out;
       print_or = 0;
       bdd label = m_j->second;
@@ -1195,7 +1195,6 @@ std::ostream& dra::operator<<(std::ostream &out, const DRAtrans &t) {
       }
       if (!first_acc)
         out << "}";
-      out << endl;
     }
   }
   // Print in the ltl3dra v0.1 format
@@ -1229,18 +1228,17 @@ void print_tgdra_hoaf_header(int states,
                              const map<int, pair<int, int> >& Zindex_to_hoaf,
                              string name = "TGDRA"
                              ) {
-  cout << "HOA: v1" << endl;
-  cout << "tool: \"ltl3dra\" \"" << VERSION_NUM << "\"" << endl;
-  cout << "name: \"" << name << " for " << uform << "\"" << endl;
-  cout << "States: " << states << endl;
+  cout << "HOA: v1";
+  cout << "\ntool: \"ltl3dra\" \"" << VERSION_NUM << "\"";
+  cout << "\nname: \"" << name << " for " << uform << "\"";
+  cout << "\nStates: " << states;
   if (states > 0) {
-    cout << "Start: " << state2Int[dra_init] << endl;
-    cout << "acc-name: generalized-Rabin " << Zindex_to_hoaf.size();
+    cout << "\nStart: " << state2Int[dra_init];
+    cout << "\nacc-name: generalized-Rabin " << Zindex_to_hoaf.size();
     for(map<int, pair<int, int> >::const_iterator i = Zindex_to_hoaf.begin(); i != Zindex_to_hoaf.end(); i++) {
       cout << " " << (i->second).second;
     }
-    cout << endl;
-    cout << "Acceptance: " << hoaf_acc_count ;
+    cout << "\nAcceptance: " << hoaf_acc_count ;
     if (Zindex_to_hoaf.size()>0) {
       for(map<int, pair<int, int> >::const_iterator i = Zindex_to_hoaf.begin(); i != Zindex_to_hoaf.end(); i++) {
         if (i != Zindex_to_hoaf.begin())
@@ -1254,16 +1252,14 @@ void print_tgdra_hoaf_header(int states,
     } else {
       cout << " f";
     }
-    cout << endl;
-    cout << "AP: " << predicates;
+    cout << "\nAP: " << predicates;
     for (int i = 0; i < predicates; ++i) {
       cout << " \"" << sym_table[i] << "\"";
     }
-    cout << endl;
-    cout << "properties: deterministic trans-labels explicit-labels trans-acc no-univ-branch" << endl;
+    cout << "\nproperties: deterministic trans-labels explicit-labels trans-acc no-univ-branch";
   } else {
-    cout << "acc-name: none" << endl;
-    cout << "Acceptance: 0 f" << endl;
+    cout << "\nacc-name: none";
+    cout << "\nAcceptance: 0 f";
   }
 }
 
@@ -1285,15 +1281,15 @@ void print_dra_hoaf(std::ostream &out,string name = "") {
     print_tgdra_hoaf_header(state_count,state2Int,Zindex_to_hoaf);
   }
 
-  out << "--BODY--" << endl;
+  out << "\n--BODY--";
   // Print states and their transitions
   for(s_i=drastates.begin(); s_i!=drastates.end(); s_i++) {
-    out << "State: " << state2Int[*s_i] << " " << *(*s_i) << endl;
+    out << "\nState: " << state2Int[*s_i] << " " << *(*s_i);
     for(t_i=(*s_i)->trans->begin(); t_i!=(*s_i)->trans->end(); t_i++) {
       out << t_i->second;
     }
   }
-  out << "--END--" << endl;
+  out << "\n--END--" << endl;
 }
 
 void print_dra_old(std::ostream &out) {

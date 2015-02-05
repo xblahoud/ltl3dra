@@ -443,14 +443,14 @@ void print_dra_hoaf_header(int states,
                              const map<int, pair<int, int> >& Zindex_to_hoaf,
                            std::string ra_name = "DRA"
                              ) {
-  cout << "HOA: v1" << endl;
-  cout << "tool: \"ltl3dra\" \"" << VERSION_NUM << "\"" << endl;
-  cout << "name: \"" << ra_name << " for " << uform << "\"" << endl;
-  cout << "States: " << states << endl;
+  cout << "HOA: v1";
+  cout << "\ntool: \"ltl3dra\" \"" << VERSION_NUM << "\"";
+  cout << "\nname: \"" << ra_name << " for " << uform << "\"";
+  cout << "\nStates: " << states;
   if (states > 0) {
-    cout << "Start: " << rastate2Int[ra_init] << endl;
-    cout << "acc-name: Rabin " << Zindex_to_hoaf.size() << endl;
-    cout << "Acceptance: " << 2*Zindex_to_hoaf.size() << " ";
+    cout << "\nStart: " << rastate2Int[ra_init];
+    cout << "\nacc-name: Rabin " << Zindex_to_hoaf.size();
+    cout << "\nAcceptance: " << 2*Zindex_to_hoaf.size() << " ";
     if (Zindex_to_hoaf.size()>0) {
       for(int i = 0; i < Zindex_to_hoaf.size();++i) {
         if (i > 0)
@@ -460,16 +460,14 @@ void print_dra_hoaf_header(int states,
     } else {
       cout << " f";
     }
-    cout << endl;
-    cout << "AP: " << predicates;
+    cout << "\nAP: " << predicates;
     for (int i = 0; i < predicates; ++i) {
       cout << " \"" << sym_table[i] << "\"";
     }
-    cout << endl;
-    cout << "properties: deterministic trans-labels explicit-labels state-acc no-univ-branch" << endl;
+    cout << "\nproperties: deterministic trans-labels explicit-labels state-acc no-univ-branch";
   } else {
-    cout << "acc-name: none" << endl;
-    cout << "Acceptance: 0 f" << endl;
+    cout << "\nacc-name: none";
+    cout << "\nAcceptance: 0 f";
   }
 }
 
@@ -488,16 +486,16 @@ void print_ra_hoaf(std::ostream &out, std::string name = "") {
   } else {
     print_dra_hoaf_header(state_count,rastate2Int,Zindex_to_hoaf);
   }
-  out << "--BODY--" << endl;
+  out << "\n--BODY--";
   
   for(s_i=rastates.begin(); s_i!=rastates.end(); s_i++) {
 /*    out << "state " << (*s_i)->id << " : " << *(*s_i) << endl;*/
-    out << "State: " << rastate2Int[*s_i] << " " << *(*s_i) << endl;
+    out << "\nState: " << rastate2Int[*s_i] << " " << *(*s_i);
     for(t_i=(*s_i)->trans->begin(); t_i!=(*s_i)->trans->end(); t_i++) {
-      out << "  " << t_i->second << endl;
+      out << "\n  " << t_i->second;
     }
   }
-  out << "--END--" << endl;
+  out << "\n--END--" << endl;
 }
 
 void print_ra_old(std::ostream &out) {
@@ -901,15 +899,15 @@ void mk_ra()
 
   if(tl_dra_stats || tl_verbose) {
     if (tl_verbose)
-      cout << endl << "-----------------------------------" << endl << endl;
-    cout << "States of TGDRA: " << drastates.size() << endl;
-    cout << "Edges of TGDRA: " << get_dra_edges() << endl;
-    cout << "Transitions of TGDRA: " << get_dra_trans() << endl;
-    cout << "Acceptance-Pairs: " << (Z_set.size()-removedConds) << endl;
-    cout << "Infinite-Sets: " << get_acc_size() << endl;
-    cout << "States of DRA: " << rastates.size() << endl;
-    cout << "Edges of DRA: " << get_ra_edges() << endl;
-    cout << "Transitions of DRA: " << get_ra_trans() << endl;
+      cout << endl << "-----------------------------------\n";
+    cout << "\nStates of TGDRA: " << drastates.size();
+    cout << "\nEdges of TGDRA: " << get_dra_edges();
+    cout << "\nTransitions of TGDRA: " << get_dra_trans();
+    cout << "\nAcceptance-Pairs: " << (Z_set.size()-removedConds);
+    cout << "\nInfinite-Sets: " << get_acc_size();
+    cout << "\nStates of DRA: " << rastates.size();
+    cout << "\nEdges of DRA: " << get_ra_edges();
+    cout << "\nTransitions of DRA: " << get_ra_trans() << endl;
   }
 
   for (int i = 0; i < levels_num; i++) {
