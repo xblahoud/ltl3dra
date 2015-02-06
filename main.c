@@ -153,10 +153,9 @@ usage(int estatus)
         printf("   \t\t  2 - build the TGDRA (default)\n");
         printf("   \t\t  3 - build the DRA\n");
         printf(" -T[2|3]\tbuild and output the specified automaton in the original LTL3DRA 0.1 format:\n");
-        printf("   \t\t  1 - build the VWAA, MMAA for the LTL(Fs,Gs) fragment\n");
         printf("   \t\t  2 - build the TGDRA (used also when the number is ommited)\n");
         printf("   \t\t  3 - build the DRA\n");
-        printf(" -L\t\tbuild and output the DRAin ltl2dstar format v2\n");
+        printf(" -L\t\tbuild and output the DRA in ltl2dstar format v2\n");
         printf(" -X\t\tdisable modified construction of VWAA (use GXF, FXG instead of GF and FG)\n");
         printf(" -O\t\tdisable optimizations of accepting sets of TGDRA\n");
         printf(" -I\t\tuse different definition of allowed transitions of TGDRA (c_1 \\in m_1)\n");
