@@ -140,10 +140,11 @@ usage(int estatus)
         printf("usage: ltl3dra [-flag] -f formula\n");
         printf("                   or -F file\n");
         printf(" -f \"formula\"\ttranslate LTL ");
-        printf("into TGDRA\n");
+        printf("into TGDRA in HOA format\n");
         printf(" -F file\tlike -f, but with the LTL ");
         printf("formula stored in a 1-line file\n");
-        printf(" -d\t\tdisplay automata (D)escription at each step (VWAA, TGDRA, and DRA) in the original LTL3DRA 0.1 format and DRA in ltl2dstar format\n");
+        printf("\t\t  (use '-F -' to read the formula from stdin\n");
+        printf(" -d\t\tdisplay automata (D)escription at each step (VWAA, TGDRA, and DRA)\n\t\t  in the original LTL3DRA 0.1 format, and DRA in ltl2dstar format\n");
 		printf(" -dH\t\tlike -d but automata are printed in HOA format\n");
         printf(" -l\t\tdisable (L)ogic formula simplification\n");
         printf(" -p\t\tdisable a-(P)osteriori simplification\n");
