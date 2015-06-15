@@ -9,6 +9,13 @@
 #define false 0
 #define true 1
 
+int is_negatedPredicate(Node *n) {
+  if (!n) return false;
+
+  if (n->ntyp == NOT && n->lft && n->lft->ntyp == PREDICATE) return true;
+  return false;
+}
+
 int is_G(Node *n) {
   if (!n) return false;
   
@@ -173,6 +180,80 @@ int is_UXp(Node *n) {
 #endif
       || is_LTL(n)) return true;
   else return false;
+}
+
+/* Checks whether the given formula is in the LTL(F_s, G_s) fragment
+ * of the ATVA'13 paper, i.e.,
+ * limited to the temporal operators F, G and XF, XG.
+ */
+int is_LTL_Fs_Gs(Node *n) {
+  if (!n) return false;
+
+  switch(n->ntyp) {
+  case OR:
+  case AND:
+    return is_LTL_Fs_Gs(n->lft) && is_LTL_Fs_Gs(n->rgt);
+    break;
+  case U_OPER:
+    return is_F(n) && is_LTL_Fs_Gs(n->rgt);
+  case V_OPER:
+    return is_G(n) && is_LTL_Fs_Gs(n->rgt);
+#ifdef NXT
+  case NEXT:
+    return (is_F(n->lft) || is_G(n->lft))
+      && is_LTL_Fs_Gs(n->lft);
+#endif
+  case NOT: // formula not in PNF...
+    if (is_negatedPredicate(n)) return true;
+    printf("Internal error: formula not in PNF");
+    exit(1);
+    break;
+  case FALSE:
+  case TRUE:
+  case PREDICATE:
+    return true;
+  default:
+    printf("Unknown token: ");
+    tl_explain(n->ntyp);
+    exit(1);
+  }
+}
+
+/* Checks whether the given formula is in in the fragment
+ * of LTL defined in Sec. 8 of the ATVA'13 paper, i.e.,
+ *   phi = psi | phi or phi | phi and phi | X phi | phi U phi
+ * where psi is a formula in LTL(F_s, G_s)
+ */
+int is_limLTL(Node *n) {
+  if (!n) return false;
+
+  switch(n->ntyp) {
+  case OR:
+  case AND:
+    return is_limLTL(n->lft) && is_limLTL(n->rgt);
+    break;
+  case U_OPER:
+    return is_limLTL(n->lft) && is_limLTL(n->rgt);
+  case V_OPER:
+    return is_LTL_Fs_Gs(n);
+#ifdef NXT
+  case NEXT:
+    return is_limLTL(n->lft);
+#endif
+  case NOT: // formula not in PNF...
+    if (is_negatedPredicate(n)) return true;
+    printf("Internal error: formula not in PNF");
+    exit(1);
+    break;
+  case FALSE:
+  case TRUE:
+  case PREDICATE:
+    return true;
+  default:
+    printf("Unknown token: ");
+    tl_explain(n->ntyp);
+    exit(1);
+  }
 }
 
 // Checks whether it is a fromula of LTL() fragment (boolean combination of APs)

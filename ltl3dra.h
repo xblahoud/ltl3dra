@@ -41,7 +41,7 @@
 #include <map>
 
 /* Set LTL3DRA's version number */
-#define VERSION_NUM "0.2.1"
+#define VERSION_NUM "0.2.2"
 #define DRA
 
 class cset;
@@ -270,6 +270,7 @@ int push(Queue *q, int elem);
 int pop(Queue *q);
 void print_queue(Queue *q);
 
+int is_limLTL(Node *);
 int is_G(Node *);
 int is_F(Node *);
 int is_Falpha(Node *);

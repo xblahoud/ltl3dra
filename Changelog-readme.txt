@@ -1,3 +1,9 @@
+version 0.2.2 ():
+  --syntax check for fragments. Based on patch provided by Joachim Klein. Thanks.
+  --bug fixes:
+    -- computation of Z_sets with U operator
+    -- HOAF had wrong information about the number of Inf sets for some gen. Rabin pairs 
+
 version 0.2.1 (2015-02-02):
   -- bug fixes:
     -- -B option produced TGDRA instead of BA-neverclaim

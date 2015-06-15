@@ -979,7 +979,7 @@ t_mm_pair combine_trans(const cset &to, int node, bool is_must) {
   // podminka, ktera urci self loopy na may stavech
   
   for (i = 1; i < list[0]; i++) {
-    if (list[i] == node) continue;
+    if (list[i] == node) continue; // loop
     mm = cout_Z_explore_node(list[i], is_must);
     if (!is_must)
       may = combine_sets(may, mm.first);
@@ -991,11 +991,16 @@ t_mm_pair combine_trans(const cset &to, int node, bool is_must) {
   return make_pair(may, must);
 }
 
+int is_looping(int node_from, const cset to) {
+    return to.is_elem(node_from);
+}
+
 t_mm_pair cout_Z_explore_node(int node, bool is_must) {
   map<cset, ATrans*>::iterator t;
   Node *n = label[node];
   set<cset> must, may;
   t_mm_pair mm;
+  set<cset> escapes; // I need this for Untils
   int i;
 
   if (transition[node])
@@ -1023,14 +1028,33 @@ t_mm_pair cout_Z_explore_node(int node, bool is_must) {
           may = combine_sets(may, mm.first);
         must = combine_sets(must, mm.second);
         break;
-#ifdef NXT
       case U_OPER:
+          /* For Untils, we need to take care of non-looping transitions
+           * separately from looping. We store them in escapes and deal
+           * with them later. For looping transitions we have to get all
+           * possible combinations
+           */
+          if (!is_F(n)) {
+            if (!is_looping(node, t->first)) {
+              escapes.insert(t->first);
+              break;
+            }
+            mm = combine_trans(t->first, node, is_must);
+            mm.first.insert(cset());
+            mm.second.insert(cset());
+            if (!is_must)
+              may = combine_sets(may, mm.first);
+            must = combine_sets(must, mm.second);
+            break;
+          }
+#ifdef NXT
       case OR:
       case NEXT:
         mm = combine_trans(t->first, node, is_must);
         if (!is_must)
           may.insert(mm.first.begin(), mm.first.end());
         must.insert(mm.second.begin(), mm.second.end());
+
         break;
 #endif
       case NOT:
@@ -1063,6 +1087,53 @@ t_mm_pair cout_Z_explore_node(int node, bool is_must) {
       if (must.empty())
         must.insert(cset());
     }
+
+    if (n->ntyp == U_OPER && !is_F(n)) {
+      set<cset>::iterator t;
+      for (t = escapes.begin(); t != escapes.end(); t++) {
+          //DEBUG
+          //cout << "escape:";
+          //t->print();
+          //cout << endl;
+          //DEBUG END
+        set<cset> looping_may = set<cset>(may);
+        set<cset> looping_must = set<cset>(must);
+        //looping_may.insert(cset());
+        //looping_must.insert(cset());
+
+
+
+        // DEBUG
+        //set<cset>::iterator j;
+        //cout << "looping:" << endl;
+        //for (j=looping_must.begin();j!=looping_must.end();j++) {
+        //    j->print();
+        //}
+        //cout << endl;
+        //END DEBUG
+
+        //may.clear();
+        //must.clear();
+
+
+//        set<cset>::iterator s_i;
+//        cout << "Escapes:\n";
+//        for (s_i = escapes.begin(); s_i != escapes.end(); s_i++) {
+//          if (s_i != escapes.begin())
+//            cout << ", ";
+//          s_i->print_and_mark(cout, final_set);
+//        }
+
+        //Here I want to combine each escape trans with every combination (and empty one) of loopings
+        mm = combine_trans(*t, node, is_must);
+        if (!is_must) {
+          set<cset> new_may = combine_sets(looping_may, mm.first);
+          may.insert(new_may.begin(),new_may.end());
+        }
+        set<cset> new_must = combine_sets(looping_must, mm.second);
+        must.insert(new_must.begin(),new_must.end());
+      }
+    }
     return make_pair(may, must);
 }
 
@@ -1074,7 +1145,6 @@ set<cset> compute_Z_set() {
 
   if (transition[0])
     for(t = transition[0]->begin(); t != transition[0]->end(); t++) {
-
       set<cset> must;
       must.insert(cset());
 

@@ -36,7 +36,7 @@
 #include "ltl3dra.h"
 
 extern int	tl_yylex(void);
-extern int	tl_verbose, tl_simp_log, tl_rew_f, tl_determinize, tl_det_m, tl_hoaf;
+extern int	tl_verbose, tl_simp_log, tl_rew_f, tl_determinize, tl_det_m, tl_hoaf, tl_dra_force;
 extern void put_uform(void);
 
 int	tl_yychar = 0;
@@ -1033,5 +1033,12 @@ tl_parse(void)
   	n = determ(n);
   	n = bin_simpler(n);
 	}*/
+
+	if (!is_limLTL(n)) {
+        std::cerr << "The LTL formula is not contained in the LTL/GUX fragment so it may be incorrect.\n";
+        if (!tl_dra_force) {
+            exit(1);
+        }
+	}
 	trans(n);
 }

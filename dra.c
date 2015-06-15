@@ -392,6 +392,11 @@ void compute_allowed_conf() {
     may.substract(*s_i, must);
     list = may.to_list();
 
+    //DEBUG
+    //cout << j << ":" << *s_i << endl;
+    //cout << hoaf_acc_count << "," << inf_sets << endl;
+    //END DEBUG
+
     set<cset> s_1, s_2;
     s_1.insert(must);
     
@@ -857,7 +862,6 @@ void remove_redundant_acc_I_sets() {
   cset fin_states;
   for (i = 0; i<Z_set.size(); i++) {
     if (!isRemoved[i]) {
-      int removed_for_this_Z = 0;
       fin_states.intersect_sets(IntToZ_set[i+1], final_set);
       if (fin_states.size() > 1) {
         int* list = fin_states.to_list();
@@ -868,11 +872,15 @@ void remove_redundant_acc_I_sets() {
             if (condSubsets[i][I_j][I_k] ) {
               // I_j \subseteq I_k -> I_k can be removed
               removedI_sets[i].insert(list[k]);
-              removed_for_this_Z++;
+              //DEBUG
+              //cout << "remove1" << I_k << endl;
             } else if (condSubsets[i][I_k][I_j]) {
+              if (removedI_sets[i].is_elem(list[k]))
+                 continue;
               // I_k \subseteq I_j -> I_j can be removed
               removedI_sets[i].insert(list[j]);
-              removed_for_this_Z++;
+              //DEBUG
+              //cout << "remove2" << I_j << endl;
             }
           }
         }
@@ -882,7 +890,16 @@ void remove_redundant_acc_I_sets() {
       // Update the information for HOAF output
       map<int, pair<int, int> >::iterator hz_i;
 
+      //DEBUG
+      //cout << removedI_sets[i].size() << " vs. " << removed_for_this_Z << endl;
+      //END DEBUG
+
+      // For HOAF we have to decrease the set numbers acording to the removed sets.
+      int removed_for_this_Z = removedI_sets[i].size();
       Zindex_to_hoaf[i+1].second -= removed_for_this_Z;
+      //DEBUG
+      //cout << i+1 << ":" << removed_for_this_Z << endl;
+      //END DEBUG
 
       for(hz_i = Zindex_to_hoaf.begin(); hz_i != Zindex_to_hoaf.end(); hz_i++) {
           if (hz_i->first <= i+1)

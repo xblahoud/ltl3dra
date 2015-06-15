@@ -82,6 +82,7 @@ int tl_dra_conf_dom = 0; /* enable configuration domination during TGDRA constru
 int tl_dra_goal  = 0; /* Writes goal output into given file */
 int tl_dra_stats = 0; /* Prints only statistics about TGDRA and DRA */
 int tl_dra_ltl2dstar = 0;
+int tl_dra_force = 0; /* Forces LTL3DRA to produce an automaton even for formula outside LTL\GUX */
 #endif
 int tl_errs      = 0;
 int tl_verbose   = 0;
@@ -138,17 +139,18 @@ void
 usage(int estatus)
 {
         printf("usage: ltl3dra [-flag] -f formula\n");
-        printf("                   or -F file\n");
+        printf("                    or -F file\n");
+
+        printf("\nInput options:\n");
         printf(" -f \"formula\"\ttranslate LTL ");
         printf("into TGDRA in HOA format\n");
         printf(" -F file\tlike -f, but with the LTL ");
         printf("formula stored in a 1-line file\n");
         printf("\t\t  (use '-F -' to read the formula from stdin\n");
+        printf(" -A\t\tbuild an automaton even for formula outside LTL-GUX\n");
+        printf("\n Output options:\n");
         printf(" -d\t\tdisplay automata (D)escription at each step (VWAA, TGDRA, and DRA)\n\t\t  in the original LTL3DRA 0.1 format, and DRA in ltl2dstar format\n");
 		printf(" -dH\t\tlike -d but automata are printed in HOA format\n");
-        printf(" -l\t\tdisable (L)ogic formula simplification\n");
-        printf(" -p\t\tdisable a-(P)osteriori simplification\n");
-//        printf(" -o\t\tdisable (O)n-the-fly simplification\n");
 		printf(" -H[1|2|3]\tbuild and output the specified automaton in HOA format:\n");
         printf("   \t\t  1 - build the VWAA, MMAA for the LTL(Fs,Gs) fragment\n");
         printf("   \t\t  2 - build the TGDRA (default)\n");
@@ -157,16 +159,24 @@ usage(int estatus)
         printf("   \t\t  2 - build the TGDRA (used also when the number is ommited)\n");
         printf("   \t\t  3 - build the DRA\n");
         printf(" -L\t\tbuild and output the DRA in ltl2dstar format v2\n");
+        printf(" -G file\tWrites goal output into given file \n");
+
+        printf("\nConstruction modificators:\n");
         printf(" -X\t\tdisable modified construction of VWAA (use GXF, FXG instead of GF and FG)\n");
         printf(" -O\t\tdisable optimizations of accepting sets of TGDRA\n");
         printf(" -I\t\tuse different definition of allowed transitions of TGDRA (c_1 \\in m_1)\n");
-        printf(" -N\t\tuse configuration dominance in TGDRA construction (experimental, not always correct)\n");
-        printf(" -G file\tWrites goal output into given file \n");
+        printf(" -l\t\tdisable (L)ogic formula simplification\n");
+        printf(" -p\t\tdisable a-(P)osteriori simplification\n");
+//        printf(" -o\t\tdisable (O)n-the-fly simplification\n");
+//        printf(" -N\t\tuse configuration dominance in TGDRA construction (experimental, not always correct)\n");
+
+        printf("\nOther options:\n");
         printf(" -t\t\tprints only statistics about TGDRA and DRA \n");
 //        printf(" -x\t\tdisable all LTL3BA specific improvements (act like LTL2BA)\n");
         printf(" -v\t\tprint LTL3DRA's version and exit\n");
         printf(" -h\t\tprint this help\n");
-        printf("\n  act-like LTL3BA options:\n");
+
+        printf("\nAct-like LTL3BA options:\n");
         printf(" -B\t\toutput BA as never claim - act like ltl3ba in default setting\n");
 
         alldone(estatus);
@@ -213,6 +223,7 @@ main(int argc, char *argv[])
                           argc--; argv++; break;
                 case 'f': if (*(argv+2)) add_ltl = *(argv+2);
                           argc--; argv++; break;
+                case 'A': tl_dra_force = 1;
 //                case 'a': tl_fjtofj = 0; break;
 //                case 'c': tl_simp_scc = 0; tl_rem_scc = 0; break;
 //                case 'o': tl_simp_fly = 0; break;

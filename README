@@ -1,6 +1,6 @@
 1. LICENSE
 
-LTL3DRA - Version 0.2 - February 2015
+LTL3DRA - Version 0.2.1 - February 2015
 Written by Tomas Babiak and Frantisek Blahoudek, FI MU, Brno, Czech Republic                          
 Copyright (c) 2013  Tomas Babiak and Frantisek Blahoudek
 
@@ -113,8 +113,8 @@ Boolean operators:
         ||  (or)
 
 Temporal operators:
-        F []  (always)
-        G <>  (eventually)
+        G []  (always)
+        F <>  (eventually)
         U     (until)
         R V   (release)
         X     (next)
