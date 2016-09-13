@@ -41,7 +41,7 @@
 #include <map>
 
 /* Set LTL3DRA's version number */
-#define VERSION_NUM "0.2.2"
+#define VERSION_NUM "0.2.3"
 #define DRA
 
 class cset;
@@ -255,20 +255,6 @@ int  *list_set(int *, int);
 void substract_set(int *, int *, int *);
 int compare_sets_lexi(int *, int *, int);
 
-typedef struct Queue {
-  int max;
-  int front;
-  int size;
-  int *data;
-} Queue;
-
-Queue* create_queue(int max_size);
-void free_queue(Queue *q);
-int is_empty(Queue *q);
-int is_full(Queue *q);
-int push(Queue *q, int elem);
-int pop(Queue *q);
-void print_queue(Queue *q);
 
 int is_limLTL(Node *);
 int is_G(Node *);
@@ -340,6 +326,9 @@ class cset
     friend std::ostream &operator<<(std::ostream &, const cset &);
 };
 
+// Declare the stream operator in the global namespace.
+std::ostream &operator<<(std::ostream &, const cset &);
+
 inline void cset::insert(int el) {
   add_set(s, el);
 }
@@ -410,7 +399,7 @@ class AProd {
     AProd *prv;
     
 //    std::pair<const cset, ATrans*>& get_curr_trans();
-    void merge_to_prod(AProd *p1, std::pair<const cset, ATrans*> &trans);
+    void merge_to_prod(AProd *p1, const std::pair<const cset, ATrans*> &trans);
     void merge_to_prod(AProd *p1, int i);
     void next(void);
     bool no_next(void);
@@ -529,4 +518,3 @@ typedef Node	*Nodeptr;
 
 #define Assert(x, y)	{ if (!(x)) { tl_explain(y); \
 			  Fatal(": assertion failed\n",(char *)0); } }
-#define min(x,y)        ((x<y)?x:y)

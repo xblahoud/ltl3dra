@@ -1,45 +1,45 @@
 1. LICENSE
 
-LTL3DRA - Version 0.2.1 - February 2015
-Written by Tomas Babiak and Frantisek Blahoudek, FI MU, Brno, Czech Republic                          
+LTL3DRA - Version 0.2.3 - September 2016
+Written by Tomas Babiak and Frantisek Blahoudek, FI MU, Brno, Czech Republic
 Copyright (c) 2013  Tomas Babiak and Frantisek Blahoudek
 
-Based on: 
+Based on:
 
 LTL2BA - Version 1.0 - October 2001
-Written by Denis Oddoux, LIAFA, France                                 
-Copyright (c) 2001  Denis Oddoux                                       
-     
+Written by Denis Oddoux, LIAFA, France
+Copyright (c) 2001  Denis Oddoux
+
 LTL2BA - Version 1.1 - August 2007
-Modified by Paul Gastin, LSV, France                                 
-Copyright (c) 2007  Paul Gastin                                       
+Modified by Paul Gastin, LSV, France
+Copyright (c) 2007  Paul Gastin
 Available at http://www.lsv.ens-cachan.fr/~gastin/ltl2ba
 
 LTL3BA - Version 1.0 - March 2012
 Copyright (c) 2013  Tomas Babiak
 Available at https://sourceforge.net/projects/ltl3ba/
 
-                                                                  
-This program is free software; you can redistribute it and/or modify   
-it under the terms of the GNU General Public License as published by   
-the Free Software Foundation; either version 2 of the License, or      
-(at your option) any later version. GNU GPL is included in this 
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version. GNU GPL is included in this
 distribution, in a file called 'LICENSE'
-                                                                       
-This program is distributed in the hope that it will be useful,        
-but WITHOUT ANY WARRANTY; without even the implied warranty of         
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          
-GNU General Public License for more details.                           
-                                                                       
-You should have received a copy of the GNU General Public License      
-along with this program; if not, write to the Free Software            
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 The algorithms used in LTL3DRA are described in:
   T. Babiak, F. Blahoudek, M. Kretinsky, and J. Strejcek
   "Effective Translation of LTL to Deterministic Rabin Automata:
      Beyond the (F,G)-Fragment (2013)"
-  In 11th International Symposium on Automated Technology 
+  In 11th International Symposium on Automated Technology
     for Verification and Analysis (ATVA 2013)
 
 The LTL3BA software was written by Tomas Babiak and the algorithms are
@@ -52,12 +52,12 @@ The LTL3BA software was written by Tomas Babiak and the algorithms are
 The LTL2BA software was written by Denis Oddoux and modified by Paul
 Gastin.  It is based on the translation algorithm presented at CAV '01:
   P.Gastin and D.Oddoux
-  "Fast LTL to Büchi Automata Translation" 
-  in 13th International Conference on Computer Aided Verification, CAV 2001, 
+  "Fast LTL to Bï¿½chi Automata Translation"
+  in 13th International Conference on Computer Aided Verification, CAV 2001,
   G. Berry, H. Comon, A. Finkel (Eds.)
-  Paris, France, July 18-22, 2001, 
+  Paris, France, July 18-22, 2001,
   Proceedings - LNCS 2102, pp. 53-65
-                                                                       
+
 Part of the code included is issued from the SPIN software Version 3.4.1
 The SPIN software is written by Gerard J. Holzmann, originally as part
 of ``Design and Validation of Protocols,'' ISBN 0-13-539925-4,
@@ -97,7 +97,7 @@ compile the program
 run the program
 > ./ltl3dra -f "formula"
 
-The formula is an LTL formula, and may contain propositional symbols, 
+The formula is an LTL formula, and may contain propositional symbols,
 boolean operators, temporal operators, and parentheses.
 The syntax used is the one used in the 'Spin' model-checker
 
@@ -132,7 +132,7 @@ to see the possible options for executing the program
 
 4. TGDRA3DOT & TGDRA
 Since version 0.2 LTL3DRA comes with tgdra3dot and tgdra utilities.
-    tgdra3dot  - a perl utility that parses a output of 
+    tgdra3dot  - a perl utility that parses a output of
                  > ltl3dra -d -f "formula" command and produces a .dot
                  file with the corresponding TGDRA.
                - USAGE
@@ -146,4 +146,3 @@ Since version 0.2 LTL3DRA comes with tgdra3dot and tgdra utilities.
 5. BUGS
 
 Please send bug-reports to xblahoud@fi.muni.cz
-

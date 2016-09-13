@@ -51,8 +51,6 @@
 /* among existing states.             Comment to disable.              */
 #define DICT
 
-using namespace std;
-
 /********************************************************************\
 |*              Structures and shared variables                     *|
 \********************************************************************/
@@ -69,7 +67,7 @@ extern FILE *tl_out;
 BState *bstack, *bstates, *bremoved;
 BScc *bscc_stack;
 #ifdef DICT
-map<GState*, BState*>** bsDict;
+std::map<GState*, BState*>** bsDict;
 #endif
 int accept, bstate_count = 0, btrans_count = 0, b_rank;
 
@@ -81,8 +79,8 @@ bool BStateComp::operator() (const BState* l, const BState* r) const {
   return (l->id < r->id || (l->id == r->id && l->order < r->order));
 }
 
-void decrement_incoming(map<BState*, bdd, BStateComp> *trans) {
-  map<BState*, bdd, BStateComp>::iterator t;
+void decrement_incoming(std::map<BState*, bdd, BStateComp> *trans) {
+  std::map<BState*, bdd, BStateComp>::iterator t;
   for(t = trans->begin(); t != trans->end(); t++)
       t->first->incoming--;
 }
@@ -102,7 +100,7 @@ BState *remove_bstate(BState *s, BState *s1) /* removes a state */
   s->nxt->prv = s->prv;
   if (s->trans)
     delete s->trans;
-  s->trans = (map<BState*, bdd, BStateComp> *)0;
+  s->trans = (std::map<BState*, bdd, BStateComp> *)0;
   s->nxt = bremoved->nxt;
   bremoved->nxt = s;
   s->prv = s1;
@@ -115,7 +113,7 @@ BState *remove_bstate(BState *s, BState *s1) /* removes a state */
 void retarget_all_btrans()
 {             /* redirects transitions before removing a state from the automaton */
   BState *s;
-  map<BState*, bdd, BStateComp>::iterator t, tx;
+  std::map<BState*, bdd, BStateComp>::iterator t, tx;
   for (s = bstates->nxt; s != bstates; s = s->nxt)
     for (t = s->trans->begin(); t != s->trans->end(); )
       if (!t->first->trans) { /* t->to has been removed */
@@ -144,7 +142,7 @@ void retarget_all_btrans()
 
 int all_btrans_match(BState *a, BState *b) /* decides if the states are equivalent */
 {
-  map<BState*, bdd>::iterator s, t;
+  std::map<BState*, bdd>::iterator s, t;
   bdd loop_a, loop_b;
   if (((a->final == accept) || (b->final == accept)) &&
       (a->final + b->final != 2 * accept) && 
@@ -221,18 +219,19 @@ int simplify_bstates() /* eliminates redundant states */
   }
   retarget_all_btrans();
 
-  for (s = bstates->nxt; s != bstates; s = s->nxt) {
-    for (s2 = s->nxt; s2 != bstates; s2 = s2->nxt) {
-      if(s->final == s2->final && s->id == s2->id) {
-        s->id = ++gstate_id;
-      }
-    }
-  }
+// This is not needed anymore - TODO: Confirm.
+//  for (s = bstates->nxt; s != bstates; s = s->nxt) {
+//    for (s2 = s->nxt; s2 != bstates; s2 = s2->nxt) {
+//      if(s->final == s2->final && s->id == s2->id) {
+//        s->id = ++gstate_id;
+//      }
+//    }
+//  }
   return changed;
 }
 
 int bdfs(BState *s) {
-  map<BState*, bdd>::iterator t;
+  std::map<BState*, bdd>::iterator t;
   BScc *c;
   BScc *scc = (BScc *)tl_emalloc(sizeof(BScc));
   scc->bstate = s;
@@ -246,12 +245,12 @@ int bdfs(BState *s) {
   for (t = s->trans->begin(); t != s->trans->end(); t++) {
     if (t->first->incoming == 0) {
       int result = bdfs(t->first);
-      scc->theta = min(scc->theta, result);
+      scc->theta = std::min(scc->theta, result);
     }
     else {
       for(c = bscc_stack->nxt; c != 0; c = c->nxt)
         if(c->bstate == t->first) {
-          scc->theta = min(scc->theta, c->rank);
+          scc->theta = std::min(scc->theta, c->rank);
           break;
         }
     }
@@ -285,28 +284,30 @@ void simplify_bscc() {
       s = remove_bstate(s, 0);
 }
 
-typedef pair<int, bdd> pair_col;
-typedef list<pair_col> set_next_col;
-typedef pair<int, set_next_col> pair_set_col;
+typedef std::pair<int, bdd> pair_col;
+typedef std::list<pair_col> set_next_col;
+typedef std::pair<int, set_next_col> pair_set_col;
 
 void insert_edge(set_next_col& L, const pair_col& E);
-int insert_color(list<pair_set_col>& L, const pair_set_col& C);
+int insert_color(std::list<pair_set_col>& L, const pair_set_col& C);
 bool equiv_set_col(const set_next_col& S1, const set_next_col& S2);
-BState* add_state(int col, map<int, BState*>& color_dict);
+BState* add_state(int col, std::map<int, BState*>& color_dict, int init_color, int true_color);
 void delete_bstack(BState* stack);
 
 void basic_bisim_reduction() {
   BState *s, *stack, *to;
   pair_col P_COL; // transition
   pair_set_col P_S_COL; // collor
-  list<pair_set_col> COL; // list of collors
-  map<int, list<BState*> > color_nodes; // <color, list of nodes>
-  map<int, list<BState*> >::iterator cn_i;
-  list<BState*>::iterator ln_i;
-  map<int, BState*> color_dict;
-  map<BState*, bdd>::iterator t;
+  std::list<pair_set_col> COL; // list of collors
+  std::map<int, std::list<BState*> > color_nodes; // <color, list of nodes>
+  std::map<int, std::list<BState*> >::iterator cn_i;
+  std::list<BState*>::iterator ln_i;
+  std::map<int, BState*> color_dict;
+  std::map<BState*, bdd>::iterator t;
   int max_old = 0, max_new = 0;
   int i;
+  int init_color = -1;
+  int true_color = -1;
   
   if(bstates == bstates->nxt) return;
   
@@ -344,6 +345,10 @@ void basic_bisim_reduction() {
     for (cn_i = color_nodes.begin(), i = 1; cn_i != color_nodes.end(); cn_i++, i++) {
       for (ln_i = cn_i->second.begin(); ln_i != cn_i->second.end(); ln_i++) {
         (*ln_i)->incoming = i;
+        if ((*ln_i)->id == -1)
+          init_color = i;
+        if ((*ln_i)->id == 0)
+          true_color = i;
       }
     }
   }
@@ -355,7 +360,7 @@ void basic_bisim_reduction() {
   stack->nxt = stack;
   stack->prv = stack;
   for (cn_i = color_nodes.begin(); cn_i != color_nodes.end(); cn_i++) {
-    s = add_state(cn_i->first, color_dict);
+    s = add_state(cn_i->first, color_dict, init_color, true_color);
     s->nxt = stack->nxt;
     s->prv = stack;
     s->nxt->prv = s;  
@@ -364,9 +369,7 @@ void basic_bisim_reduction() {
     to = cn_i->second.front();
     s->final = to->final;
 
-    for (ln_i = cn_i->second.begin(); ln_i != cn_i->second.end(); ln_i++) {
-      if ((*ln_i)->id == -1) {
-        s->id = -1;
+    if (s->id == -1) {
         // s is initial node -> move it to the bottom of the stack
         s->prv->nxt = s->nxt;
         s->nxt->prv = s->prv;
@@ -376,9 +379,21 @@ void basic_bisim_reduction() {
         stack->prv = s;
 
       }
-      if ((*ln_i)->id == 0) s->id = 0;
+
+    for (ln_i = cn_i->second.begin(); ln_i != cn_i->second.end(); ln_i++) {
+//      if ((*ln_i)->id == -1) {
+//        s->id = -1;
+//        // s is initial node -> move it to the bottom of the stack
+//        s->prv->nxt = s->nxt;
+//        s->nxt->prv = s->prv;
+//        s->prv = stack->prv;
+//        s->nxt = stack;
+//        stack->prv->nxt = s;
+//        stack->prv = s;
+//      }
+//      if ((*ln_i)->id == 0) s->id = 0;
       for (t = (*ln_i)->trans->begin(); t != (*ln_i)->trans->end(); t++) {
-        to = add_state(t->first->incoming, color_dict);
+        to = add_state(t->first->incoming, color_dict, init_color, true_color);
         if ((*s->trans)[to] == bdd_false()) {
           (*s->trans)[to] = t->second;
         } else {
@@ -394,8 +409,8 @@ void basic_bisim_reduction() {
   bstates = stack;
 }
 
-BState* add_state(int col, map<int, BState*>& color_dict) {
-  map<int, BState*>::iterator it = color_dict.find(col);
+BState* add_state(int col, std::map<int, BState*>& color_dict, int init_color, int true_color) {
+  std::map<int, BState*>::iterator it = color_dict.find(col);
   
   if (it !=  color_dict.end()) {
     return color_dict[col];
@@ -403,10 +418,15 @@ BState* add_state(int col, map<int, BState*>& color_dict) {
   
   BState* s = (BState *) tl_emalloc(sizeof(BState)); /* creates a new state */
   s->gstate = (GState*) 0;
+  if (col == init_color || col == true_color) {
+    s->id = ((col == init_color) ? -1 : 0);  
+  } else {
   s->id = col;
+  }
   s->incoming = col;
   s->final = -1;
-  s->trans = new map<BState*, bdd, BStateComp>();
+  s->order = 0; // Each color is unique so the order is not needed to distinguish different states.
+  s->trans = new std::map<BState*, bdd, BStateComp>();
   color_dict[col] = s;
   bstate_count++;
   return s;
@@ -436,9 +456,9 @@ void insert_edge(set_next_col& L, const pair_col& E) {
   }
 }
 
-int insert_color(list<pair_set_col>& L, const pair_set_col& C)
+int insert_color(std::list<pair_set_col>& L, const pair_set_col& C)
 {
-  list<pair_set_col>::iterator l_i, l_e;
+  std::list<pair_set_col>::iterator l_i, l_e;
   int i = 1;
 
   if (L.empty()) {
@@ -490,16 +510,18 @@ void strong_fair_sim_reduction() {
   BState *s, *stack, *to;
   pair_col P_COL; // transition
   pair_set_col P_S_COL; // collor
-  list<pair_set_col> COL; // list of collors
-  list<pair_set_col>::iterator col_i, col_j;
-  map<int, list<BState*> > color_nodes; // <color, list of nodes>
-  map<int, list<BState*> >::iterator cn_i;
-  list<BState*>::iterator ln_i;
-  map<BState*, bdd>::iterator t;
-  map<int, BState*> color_dict;
+  std::list<pair_set_col> COL; // list of collors
+  std::list<pair_set_col>::iterator col_i, col_j;
+  std::map<int, std::list<BState*> > color_nodes; // <color, list of nodes>
+  std::map<int, std::list<BState*> >::iterator cn_i;
+  std::list<BState*>::iterator ln_i;
+  std::map<BState*, bdd>::iterator t;
+  std::map<int, BState*> color_dict;
   int max_old = 0, max_new = 0;
   int size_old = 1, size_new = 1;
   int i, i1, i2;
+  int init_color = -1;
+  int true_color = -1;
   
   bool **par_ord, **par_ord_new; // castecne usporadani na barvach
   int par_ord_size, par_ord_size_new;
@@ -548,6 +570,10 @@ void strong_fair_sim_reduction() {
     for (cn_i = color_nodes.begin(), i = 1; cn_i != color_nodes.end(); cn_i++, i++) {
       for (ln_i = cn_i->second.begin(); ln_i != cn_i->second.end(); ln_i++) {
         (*ln_i)->incoming = i;
+        if ((*ln_i)->id == -1)
+          init_color = i;
+        if ((*ln_i)->id == 0)
+          true_color = i;
       }
     }
     
@@ -588,7 +614,7 @@ void strong_fair_sim_reduction() {
   bstate_count = 0;
   btrans_count = 0;
   for (cn_i = color_nodes.begin(); cn_i != color_nodes.end(); cn_i++) {
-    s = add_state(cn_i->first, color_dict);
+    s = add_state(cn_i->first, color_dict, init_color, true_color);
     s->nxt = stack->nxt;
     s->prv = stack;
     s->nxt->prv = s;  
@@ -597,10 +623,8 @@ void strong_fair_sim_reduction() {
     to = cn_i->second.front();
     s->final = to->final;
 
-    for (ln_i = cn_i->second.begin(); ln_i != cn_i->second.end(); ln_i++) {
-      if ((*ln_i)->id == -1) {
-        s->id = -1;
-        // s is initial node -> move it at the bottom of the stack
+    if (s->id == -1) {
+      // s is initial node -> move it to the bottom of the stack
         s->prv->nxt = s->nxt;
         s->nxt->prv = s->prv;
         s->prv = stack->prv;
@@ -608,9 +632,21 @@ void strong_fair_sim_reduction() {
         stack->prv->nxt = s;
         stack->prv = s;
       }
-      if ((*ln_i)->id == 0) s->id = 0;
+
+    for (ln_i = cn_i->second.begin(); ln_i != cn_i->second.end(); ln_i++) {
+//      if ((*ln_i)->id == -1) {
+//        //s->id = -1;
+//        // s is initial node -> move it at the bottom of the stack
+//        s->prv->nxt = s->nxt;
+//        s->nxt->prv = s->prv;
+//        s->prv = stack->prv;
+//        s->nxt = stack;
+//        stack->prv->nxt = s;
+//        stack->prv = s;
+//      }
+//      if ((*ln_i)->id == 0) s->id = 0;
       for (t = (*ln_i)->trans->begin(); t != (*ln_i)->trans->end(); t++) {
-        to = add_state(t->first->incoming, color_dict);
+        to = add_state(t->first->incoming, color_dict, init_color, true_color);
         add_opt_trans(s, to, t->second, par_ord);
       }
     }
@@ -659,7 +695,7 @@ void remove_non_imaximal(set_next_col& L, bool **par_ord) {
 }
 
 void add_opt_trans(BState *s, BState *to, bdd& label, bool **par_ord) {
-  map<BState*, bdd>::iterator t_i, t_j;
+  std::map<BState*, bdd>::iterator t_i, t_j;
   int c, c1;
   c = to->incoming - 1;
   
@@ -687,16 +723,15 @@ void add_opt_trans(BState *s, BState *to, bdd& label, bool **par_ord) {
   }
 }
 
-void cout_states_and_trans() {
-  BState *s;
-  bstate_count = 0;
-  btrans_count = 0;
-  for(s = bstates->nxt; s != bstates; s = s->nxt) {
-    bstate_count++;
-    btrans_count += s->trans->size();
-  }
-
-}
+//void count_states_and_trans() {
+//  BState *s;
+//  bstate_count = 0;
+//  btrans_count = 0;
+//  for(s = bstates->nxt; s != bstates; s = s->nxt) {
+//    bstate_count++;
+//    btrans_count += s->trans->size();
+//  }
+//}
 
 void remove_redundand_accept() {
   BState *s;
@@ -781,7 +816,7 @@ BState *find_bstate(GState *state, int final, BState *s)
   s->incoming = 0;
   s->final = final;
   s->order = final;
-  s->trans = new map<BState*, bdd, BStateComp>();
+  s->trans = new std::map<BState*, bdd, BStateComp>();
   s->nxt = bstack->nxt;
   bstack->nxt = s;
 
@@ -802,9 +837,9 @@ int next_final(const cset &set, int fin) /* computes the 'final' value */
 void make_btrans(BState *s) /* creates all the transitions from a state */
 {
   int state_trans = 0;
-  map<GState*, map<cset, bdd> >::iterator gt;
-  map<cset, bdd>::iterator gt2;
-  map<BState*, bdd>::iterator t1, tx;
+  std::map<GState*, std::map<cset, bdd> >::iterator gt;
+  std::map<cset, bdd>::iterator gt2;
+  std::map<BState*, bdd>::iterator t1, tx;
   BState *s1;
   if(s->gstate->trans)
     for(gt = s->gstate->trans->begin(); gt != s->gstate->trans->end(); gt++) {
@@ -844,7 +879,7 @@ void make_btrans(BState *s) /* creates all the transitions from a state */
   if(tl_simp_fly) {
     if(s->trans->empty()) { /* s has no transitions */
       delete s->trans;
-      s->trans = (map<BState*, bdd, BStateComp> *)0;
+      s->trans = (std::map<BState*, bdd, BStateComp> *)0;
       s->prv = (BState *)0;
       s->nxt = bremoved->nxt;
       bremoved->nxt = s;
@@ -861,7 +896,7 @@ void make_btrans(BState *s) /* creates all the transitions from a state */
     if(s1 != bstates) { /* s and s1 are equivalent */
       decrement_incoming(s->trans);
       delete s->trans;
-      s->trans = (map<BState*, bdd, BStateComp> *)0;
+      s->trans = (std::map<BState*, bdd, BStateComp> *)0;
       s->prv = s1;
       s->nxt = bremoved->nxt;
       bremoved->nxt = s;
@@ -887,7 +922,7 @@ extern int print_or;
 
 void print_buchi(BState *s) /* dumps the Buchi automaton */
 {
-  map<BState*, bdd>::iterator t;
+  std::map<BState*, bdd>::iterator t;
   if(s == bstates) return;
 
   print_buchi(s->nxt); /* begins with the last state */
@@ -931,7 +966,7 @@ void print_buchi(BState *s) /* dumps the Buchi automaton */
 }
 
 void print_spin_buchi() {
-  map<BState*, bdd>::iterator t;
+  std::map<BState*, bdd>::iterator t;
   BState *s;
   int accept_all = 0;
   if(bstates->nxt == bstates) { /* empty automaton */
@@ -1012,10 +1047,12 @@ void print_ba_state(BState* s) {
   else fprintf(tl_out, "S%i", s->id);
 }
 
-void print_ba_hoaf_header(int states, int init_state) {
+void print_ba_hoaf_header(int states,
+                          int init_state,
+                          const std::string& name) {
   fprintf(tl_out, "HOA: v1\n");
   fprintf(tl_out, "tool: \"ltl3ba\" \"%s\"\n", VERSION_NUM);
-  fprintf(tl_out, "name: \"BA for ");
+  fprintf(tl_out, "name: \"%s for ", name.c_str());
   put_uform();
   fprintf(tl_out, "\"\n");
   fprintf(tl_out, "States: %d\n", states);
@@ -1030,17 +1067,17 @@ void print_ba_hoaf_header(int states, int init_state) {
     fprintf(tl_out, "\n");
     fprintf(tl_out, "properties: trans-labels explicit-labels state-acc no-univ-branch\n");
   } else {
-    fprintf(tl_out, "acc-name: none\n");
-    fprintf(tl_out, "Acceptance: 0 f\n");
+    fprintf(tl_out, "acc-name: Buchi\n");
+    fprintf(tl_out, "Acceptance: 1 Inf(0)\n");
   }
 }
 
-void print_ba_hoaf() {
+void print_ba_hoaf(const std::string& name = "BA") {
   BState *s;
-  map<BState*, bdd>::iterator t;
+  std::map<BState*, bdd>::iterator t;
 
   // Count states and prepare bstate to int map
-  map<BState*, int> bstate2Int;
+  std::map<BState*, int> bstate2Int;
   int init_state = -1;
   bstate_count = 0;
   for(s = bstates->prv; s != bstates; s = s->prv) {
@@ -1050,7 +1087,7 @@ void print_ba_hoaf() {
     bstate2Int[s] = bstate_count++;
   }
   
-  print_ba_hoaf_header(bstate_count, init_state);
+  print_ba_hoaf_header(bstate_count, init_state, name);
 
   fprintf(tl_out, "--BODY--\n");
 
@@ -1077,7 +1114,7 @@ void print_ba_hoaf() {
 }
 
 void print_ba() {
-  map<BState*, bdd>::iterator t;
+  std::map<BState*, bdd>::iterator t;
   BState *s;
   int accept_all = 0;
 
@@ -1126,8 +1163,8 @@ void allsatPrintHandlerDve(char* varset, int size)
   print_or = 1;
 }
 
-void print_dve_buchi(ostream& o_stream) {
-  map<BState*, bdd>::iterator t;
+void print_dve_buchi(std::ostream& o_stream) {
+  std::map<BState*, bdd>::iterator t;
   int i = 1;
   BState *s;
   std::ostringstream states, a_states, i_states;
@@ -1206,14 +1243,14 @@ void mk_buchi()
 {/* generates a Buchi automaton from the generalized Buchi automaton */
   int i;
   BState *s = (BState *)tl_emalloc(sizeof(BState));
-  map<GState*, map<cset, bdd> >::iterator gt;
-  map<cset, bdd>::iterator gt2;
-  map<BState*, bdd>::iterator t1, tx;
+  std::map<GState*, std::map<cset, bdd> >::iterator gt;
+  std::map<cset, bdd>::iterator gt2;
+  std::map<BState*, bdd>::iterator t1, tx;
   accept = final[0] - 1;
 #ifdef DICT
-  bsDict = (map<GState*, BState*> **) tl_emalloc(final[0]*sizeof(map<GState*, BState*>*));
+  bsDict = (std::map<GState*, BState*> **) tl_emalloc(final[0]*sizeof(std::map<GState*, BState*>*));
   for (i = 0; i < final[0]; i++) {
-    bsDict[i] = new map<GState*, BState*>();
+    bsDict[i] = new std::map<GState*, BState*>();
   }
 #endif
   
@@ -1231,10 +1268,11 @@ void mk_buchi()
   s->id = -1;
   s->incoming = 1;
   s->final = 0;
+  s->order = 0;
   s->gstate = 0;
-  s->trans = new map<BState*, bdd, BStateComp>();
+  s->trans = new std::map<BState*, bdd, BStateComp>();
 #ifdef DICT
-  bsDict[0]->insert(pair<GState*, BState*>(0, s));
+  bsDict[0]->insert(std::pair<GState*, BState*>(0, s));
 #endif
   for(i = 0; i < init_size; i++)
     if(init[i])
@@ -1293,13 +1331,14 @@ void mk_buchi()
 #endif
 
   if(tl_verbose) {
-    fprintf(tl_out, "Buchi automaton before simplification\n");
     if (tl_verbose == 1) {
+      fprintf(tl_out, "Buchi automaton before simplification\n");
       print_buchi(bstates->nxt);
       if(bstates == bstates->nxt) 
         fprintf(tl_out, "empty automaton, refuses all words\n");
-    } else
-      print_ba_hoaf();
+    } else {
+      print_ba_hoaf("BA before simplification");
+    }
     fprintf(tl_out, "\n");
   }
 
@@ -1312,13 +1351,14 @@ void mk_buchi()
     }
     
     if(tl_verbose) {
-      fprintf(tl_out, "Buchi automaton after simplification\n");
       if (tl_verbose == 1) {
+        fprintf(tl_out, "Buchi automaton after simplification\n");
         print_buchi(bstates->nxt);
         if(bstates == bstates->nxt) 
           fprintf(tl_out, "empty automaton, refuses all words\n");
-      } else
+      } else {
         print_ba_hoaf();
+      }
       fprintf(tl_out, "\n");
     }
   }
@@ -1361,5 +1401,5 @@ void mk_buchi()
   } else {
     print_spin_buchi();
   }
-//  print_dve_buchi(cout);
+//  print_dve_buchi(std::cout);
 }

@@ -39,8 +39,6 @@ extern FILE *tl_out;
 extern int node_size, sym_size, scc_size;
 extern char **sym_table;
 
-/*int scc_size;*/
-
 int mod = 8 * sizeof(int);
 
 

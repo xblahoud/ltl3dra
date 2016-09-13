@@ -45,6 +45,7 @@
 #include <bdd.h>
 #include <map>
 #include <set>
+#include <algorithm>
 #define NO 0
 #define YES 1
 /* Define whether to use supplementary outputs or not. */
@@ -54,14 +55,12 @@
 /* among existing states.             Comment to disable.              */
 #define DICT
 
-using namespace std;
-
 /********************************************************************\
 |*              Structures and shared variables                     *|
 \********************************************************************/
 
 extern FILE *tl_out;
-extern map<cset, ATrans*> **transition;
+extern std::map<cset, ATrans*> **transition;
 
 extern int tl_verbose, tl_stats, tl_simp_diff, tl_simp_fly, tl_fjtofj, tl_ltl3ba,
   tl_simp_scc, *final_set, node_id, tl_postpone, tl_f_components, tl_rem_scc, node_size,
@@ -72,11 +71,11 @@ extern Node **label;
 GState *gstack, *gremoved, *gstates, **init;
 GScc *gscc_stack;
 #ifdef DICT
-map<cset, GState*> gsDict;
+std::map<cset, GState*> gsDict;
 #endif
-map<cset, ATrans*> *empty_t;
+std::map<cset, ATrans*> *empty_t;
 int init_size = 0, gstate_id = 1, gstate_count = 0, gtrans_count = 0, compute_directly;
-int *final, rank, scc_id, scc_size, *bad_scc, *non_term_scc;
+int *final, scc_rank, scc_id, scc_size, *bad_scc, *non_term_scc;
 cset *fin;
 
 extern int *INFp_nodes, *UXp_nodes, *GFcomp_nodes, *Falpha_nodes, **predecessors, *tecky, *V_nodes,
@@ -112,7 +111,7 @@ void AProd::merge_to_prod(AProd *p1, int i) {
   prod_to.insert(i);
 }
 
-void AProd::merge_to_prod(AProd *p1, pair<const cset, ATrans*> &trans) {
+void AProd::merge_to_prod(AProd *p1, const std::pair<const cset, ATrans*> &trans) {
   if(!p1->prod || !trans.second) {
     if(prod) {
       free_atrans(prod, 0);
@@ -135,7 +134,7 @@ void AProd::merge_to_prod(AProd *p1, pair<const cset, ATrans*> &trans) {
 }
 
 void cGTrans::decrement_incoming(void) {
-  map<GState*, map<cset, bdd>, GStateComp>::iterator t;
+  std::map<GState*, std::map<cset, bdd>, GStateComp>::iterator t;
   for(t = trans.begin(); t != trans.end(); t++)
     t->first->incoming = t->first->incoming - t->second.size();
 }
@@ -143,8 +142,8 @@ void cGTrans::decrement_incoming(void) {
 /* Check wheter the newly build transitions dominates any existing or is dominated */
 /* true is returned if the new transition shoul be added */
 bool cGTrans::check_dominance(ATrans *t, cset *t_to, cset* fin, int acc, int &state_trans, GState* s) {
-  map<GState*, map<cset, bdd>, GStateComp>::iterator t1, tx1;
-  map<cset, bdd>::iterator t2, tx2;
+  std::map<GState*, std::map<cset, bdd>, GStateComp>::iterator t1, tx1;
+  std::map<cset, bdd>::iterator t2, tx2;
   if (compute_directly || !tl_simp_fly) return 1;
   for(t1 = trans.begin(); t1 != trans.end(); ) {
     if(//!compute_directly && tl_simp_fly &&
@@ -187,8 +186,8 @@ bool cGTrans::check_dominance(ATrans *t, cset *t_to, cset* fin, int acc, int &st
 }
 
 bool cGTrans::determinize(ATrans *t, cset *t_to, cset* fin, int acc, int &state_trans, GState* s) {
-  map<GState*, map<cset, bdd>, GStateComp>::iterator t1, tx1;
-  map<cset, bdd>::iterator t2, tx2;
+  std::map<GState*, std::map<cset, bdd>, GStateComp>::iterator t1, tx1;
+  std::map<cset, bdd>::iterator t2, tx2;
   for(t1 = trans.begin(); t1 != trans.end(); ) {
     if (t_to->is_subset_of(*t1->first->nodes_set)) {
       for(t2 = t1->second.begin(); t2 != t1->second.end(); ) {
@@ -274,9 +273,9 @@ int simplify_gtrans() /* simplifies the transitions */
 {
   int changed = 0;
   GState *s;
-  map<GState*, map<cset, bdd>, GStateComp>::iterator t;
-  map<cset, bdd>::iterator gt1, gt2, gx;
-  map<cset, bdd>::reverse_iterator rt1, rt2, rx;
+  std::map<GState*, std::map<cset, bdd>, GStateComp>::iterator t;
+  std::map<cset, bdd>::iterator gt1, gt2, gx;
+  std::map<cset, bdd>::reverse_iterator rt1, rt2, rx;
 
   for(s = gstates->nxt; s != gstates; s = s->nxt) {
     if (!tl_f_components || !included_set(s->nodes_set->get_set(), GFcomp_nodes, 0)) {
@@ -321,8 +320,8 @@ int simplify_gtrans() /* simplifies the transitions */
 void retarget_all_gtrans()
 {             /* redirects transitions before removing a state from the automaton */
   GState *s;
-  map<GState*, map<cset, bdd>, GStateComp>::iterator t1, tx;
-  map<cset, bdd>::iterator t2;
+  std::map<GState*, std::map<cset, bdd>, GStateComp>::iterator t1, tx;
+  std::map<cset, bdd>::iterator t2;
   int i;
   for (i = 0; i < init_size; i++)
     if (init[i] && !init[i]->trans) /* init[i] has been removed */
@@ -331,7 +330,7 @@ void retarget_all_gtrans()
     for (t1 = s->trans->begin(); t1 != s->trans->end(); )
       if (!t1->first->trans) { /* t->to has been removed */
         if(t1->first->prv) { /* t->to->prv have some transitions - retarget there */
-          map<cset, bdd> *m = &((*s->trans)[t1->first->prv]);
+          std::map<cset, bdd> *m = &((*s->trans)[t1->first->prv]);
           if (m->empty()) {
             *m = (*s->trans)[t1->first];
           } else {
@@ -366,8 +365,8 @@ int all_gtrans_match(GState *a, GState *b, int use_scc)
     if (a->trans->size() != b->trans->size())
       return 0;
 
-    map<GState*, map<cset, bdd>, GStateComp>::iterator a_t1, b_t1;
-    map<cset, bdd>::iterator a_t2, b_t2;
+    std::map<GState*, std::map<cset, bdd>, GStateComp>::iterator a_t1, b_t1;
+    std::map<cset, bdd>::iterator a_t2, b_t2;
     
     for (a_t1 = a->trans->begin(), b_t1 = b->trans->begin(); a_t1 != a->trans->end(); a_t1++, b_t1++) {
       // We must have tranisions going to the same state
@@ -449,12 +448,12 @@ int simplify_gstates() /* eliminates redundant states */
 }
 
 int gdfs(GState *s) {
-  map<GState*, map<cset, bdd>, GStateComp>::iterator t1;
+  std::map<GState*, std::map<cset, bdd>, GStateComp>::iterator t1;
   GScc *c;
   GScc *scc = (GScc *)tl_emalloc(sizeof(GScc));
   scc->gstate = s;
-  scc->rank = ::rank;
-  scc->theta = ::rank++;
+  scc->rank = scc_rank;
+  scc->theta = scc_rank++;
   scc->nxt = gscc_stack;
   gscc_stack = scc;
 
@@ -469,12 +468,12 @@ int gdfs(GState *s) {
   for (t1 = s->trans->begin(); t1 != s->trans->end(); t1++) {
     if (t1->first->incoming == 0) {
       int result = gdfs(t1->first);
-      scc->theta = min(scc->theta, result);
+      scc->theta = std::min(scc->theta, result);
     }
     else {
       for(c = gscc_stack->nxt; c != 0; c = c->nxt)
         if(c->gstate == t1->first) {
-          scc->theta = min(scc->theta, c->rank);
+          scc->theta = std::min(scc->theta, c->rank);
           break;
         }
     }
@@ -492,10 +491,10 @@ int gdfs(GState *s) {
 
 void simplify_gscc() {
   GState *s;
-  map<GState*, map<cset, bdd>, GStateComp>::iterator t1;
-  map<cset, bdd>::iterator t2;
+  std::map<GState*, std::map<cset, bdd>, GStateComp>::iterator t1;
+  std::map<cset, bdd>::iterator t2;
   int i, **scc_final;
-  ::rank = 1;
+  scc_rank = 1;
   gscc_stack = 0;
   scc_id = 1;
 
@@ -542,7 +541,7 @@ void simplify_gscc() {
 
 int is_final(cset *from, ATrans *at, cset *at_to, int i) /*is the transition final for i ?*/
 {
-  map<cset, ATrans*>::iterator t;
+  std::map<cset, ATrans*>::iterator t;
   int in_to;
   if((tl_fjtofj && !at_to->is_elem(i)) ||
     (!tl_fjtofj && !from->is_elem(i))) return 1;
@@ -567,7 +566,7 @@ GState *find_gstate(cset *set, GState *s)
 
 #ifdef DICT
   // find the state
-/*  map<cset, GState*>::iterator gs_temp = gsDict.find(*set);
+/*  std::map<cset, GState*>::iterator gs_temp = gsDict.find(*set);
   if (gs_temp != gsDict.end())
     return gs_temp->second;*/
   GState** st_temp = &(gsDict[*set]);
@@ -603,7 +602,7 @@ GState *find_gstate(cset *set, GState *s)
   gstack->nxt = s;
 #ifdef DICT
   // Insert a new state into dictionary
-//  gsDict.insert(pair<cset, GState*>(*s->nodes_set, s));
+//  gsDict.insert(std::pair<cset, GState*>(*s->nodes_set, s));
   *st_temp = s;
 #endif
   return s;
@@ -744,7 +743,7 @@ void make_gtrans(GState *s) { /* creates all the transitions from a state */
   prod->prv = prod;
   list = s->nodes_set->to_list();
 
-//  cout << endl << "Spracuvam stav: " << s->id << " s->nodes_set: " << *s->nodes_set << endl;
+//  std::cout << std::endl << "Spracuvam stav: " << s->id << " s->nodes_set: " << *s->nodes_set << std::endl;
 
 #if SUPP_OUT == YES  
     fprintf(tl_out, "Check: ");
@@ -853,13 +852,13 @@ void make_gtrans(GState *s) { /* creates all the transitions from a state */
 #endif
             remove_redundand_targets(t1_to, fin);
 #if SUPP_OUT == YES
-            cout << t1_to;
+            std::cout << t1_to;
             printf("\n");
 #endif
           }
         }
         GState *to = find_gstate(t1_to, s);
-//        cout << "Inserting trans to: " << to->id << endl;
+//        std::cout << "Inserting trans to: " << to->id << std::endl;
         // if it is a new transition, incerement counters
         if (s->trans->add_trans(t1->label, fin, to)) {
           to->incoming++;
@@ -951,8 +950,8 @@ void reverse_print_generalized(GState *s) /* dumps the generalized Buchi automat
 
   reverse_print_generalized(s->nxt); /* begins with the last state */
 
-  map<GState*, map<cset, bdd>, GStateComp>::iterator t;
-  map<cset, bdd>::iterator t2;
+  std::map<GState*, std::map<cset, bdd>, GStateComp>::iterator t;
+  std::map<cset, bdd>::iterator t2;
   
   fprintf(tl_out, "state %i (", s->id);
   s->nodes_set->print();
@@ -1017,8 +1016,8 @@ void print_tgba_state_name(const cset* set, bool is_hoaf) {
 }
 
 void print_tgba_all_transitions_of(const GState* s) {
-  map<GState*, map<cset, bdd>, GStateComp>::iterator t;
-  map<cset, bdd>::iterator t2;
+  std::map<GState*, std::map<cset, bdd>, GStateComp>::iterator t;
+  std::map<cset, bdd>::iterator t2;
 
   for(t = s->trans->begin(); t != s->trans->end(); t++) {
     for(t2 = t->second.begin(); t2 != t->second.end(); t2++) {
@@ -1077,10 +1076,10 @@ void print_tgba() {
 }
 
 void print_generalized_hoaf_acc_set(const cset& set,
-                                    const map<int, int>& final2Int) {
+                                    const std::map<int, int>& final2Int) {
   int *list = set.to_list();
   if (list[0] > 1)
-    fprintf(tl_out, "{");
+    fprintf(tl_out, " {");
   for(int i = 1; i < list[0]; i++) {
     if (i > 1)
       fprintf(tl_out, " ");
@@ -1093,21 +1092,23 @@ void print_generalized_hoaf_acc_set(const cset& set,
 
 void print_generalized_hoaf_header(int states,
                                    int init_states,
-                                   const map<int, int>& final2Int,
-                                   const map<GState*, int>& gstate2Int) {
+                                   const std::map<int, int>& final2Int,
+                                   const std::map<GState*, int>& gstate2Int,
+                                   const std::string& name) {
   fprintf(tl_out, "HOA: v1\n");
   fprintf(tl_out, "tool: \"ltl3ba\" \"%s\"\n", VERSION_NUM);
-  fprintf(tl_out, "name: \"TGBA for ");
+  fprintf(tl_out, "name: \"%s for ", name.c_str());
   put_uform();
   fprintf(tl_out, "\"\n");
   fprintf(tl_out, "States: %d\n", states);
   if (states > 0) {
     for(int i = 0; i < init_states; i++)
+      if(init[i])
       fprintf(tl_out, "Start: %d\n", gstate2Int.find(init[i])->second);
     fprintf(tl_out, "acc-name: generalized-Buchi %u\n", final2Int.size());
     fprintf(tl_out, "Acceptance: %u", final2Int.size());
     if (final2Int.size() > 0) {
-      for(map<int, int>::const_iterator i = final2Int.begin(); i != final2Int.end(); i++) {
+      for(std::map<int, int>::const_iterator i = final2Int.begin(); i != final2Int.end(); i++) {
         if (i != final2Int.begin())
           fprintf(tl_out, " &");
         fprintf(tl_out, " Inf(%d)", i->second);
@@ -1123,17 +1124,17 @@ void print_generalized_hoaf_header(int states,
     fprintf(tl_out, "\n");
     fprintf(tl_out, "properties: trans-labels explicit-labels trans-acc no-univ-branch\n");
   } else {
-    fprintf(tl_out, "acc-name: none\n");
-    fprintf(tl_out, "Acceptance: 0 f\n");
+    fprintf(tl_out, "acc-name: all\n");
+    fprintf(tl_out, "Acceptance: 0 t\n");
   }
 }
 
-void print_generalized_hoaf(){
+void print_generalized_hoaf(const std::string& name = "TGBA"){
   GState *s;
-  map<GState*, map<cset, bdd>, GStateComp>::iterator t;
-  map<cset, bdd>::iterator t2;
-  map<int, int> final2Int;
-  map<GState*, int> gstate2Int;
+  std::map<GState*, std::map<cset, bdd>, GStateComp>::iterator t;
+  std::map<cset, bdd>::iterator t2;
+  std::map<int, int> final2Int;
+  std::map<GState*, int> gstate2Int;
   
   gstate_count = 0;
   for(int i = 1; i < final[0]; i++) {
@@ -1144,7 +1145,7 @@ void print_generalized_hoaf(){
     gstate2Int[s] = gstate_count++;
   }
 
-  print_generalized_hoaf_header(gstate_count, init_size, final2Int, gstate2Int);
+  print_generalized_hoaf_header(gstate_count, init_size, final2Int, gstate2Int, name);
 
   fprintf(tl_out, "--BODY--\n");
 
@@ -1161,7 +1162,7 @@ void print_generalized_hoaf(){
           print_or = 0;
           bdd_allsat(t2->second, allsatPrintHandler_hoaf);
         }
-        fprintf(tl_out, "] %d ", gstate2Int[t->first]);
+        fprintf(tl_out, "] %d", gstate2Int[t->first]);
         print_generalized_hoaf_acc_set(t2->first, final2Int);
         fprintf(tl_out, "\n");
       }
@@ -1171,10 +1172,10 @@ void print_generalized_hoaf(){
 }
 
 void init_empty_t() {
-  empty_t = new map<cset, ATrans*>();
+  empty_t = new std::map<cset, ATrans*>();
   ATrans *t = emalloc_atrans();
   t->label = bdd_true();
-  empty_t->insert(pair<cset, ATrans*>(cset(0), t));
+  empty_t->insert(std::pair<cset, ATrans*>(cset(0), t));
 }
 
 /********************************************************************\
@@ -1183,7 +1184,7 @@ void init_empty_t() {
 
 void mk_generalized()
 { /* generates a generalized Buchi automaton from the alternating automaton */
-  map<cset, ATrans*>::iterator t;
+  std::map<cset, ATrans*>::iterator t;
   GState *s;
   int i;
 
@@ -1210,7 +1211,7 @@ void mk_generalized()
       s->nxt = gstack->nxt;
       gstack->nxt = s;
 #ifdef DICT
-      gsDict.insert(pair<cset, GState*>(*s->nodes_set, s));
+      gsDict.insert(std::pair<cset, GState*>(*s->nodes_set, s));
 #endif
       init_size++;
     }

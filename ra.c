@@ -21,7 +21,6 @@
 /* among existing states.             Comment to disable.              */
 #define DICT
 
-using namespace std;
 using namespace dra;
 
 /********************************************************************\
@@ -43,50 +42,50 @@ extern std::ofstream *automaton;
 extern char** sym_table;
 extern int sym_id;
 int from, to, tid = 0;
-extern list<bdd> det_constraints;
+extern std::list<bdd> det_constraints;
 
 
-extern set<cset> Z_set;
-extern map<cset, int> Z_setToInt;
-extern map<int, cset> IntToZ_set;
-extern map<int, pair<int,int> > Zindex_to_hoaf;
-extern map<int, int> acc_to_pos;
-extern map<int, int> pos_to_acc;
+extern std::set<cset> Z_set;
+extern std::map<cset, int> Z_setToInt;
+extern std::map<int, cset> IntToZ_set;
+extern std::map<int, std::pair<int,int> > Zindex_to_hoaf;
+extern std::map<int, int> acc_to_pos;
+extern std::map<int, int> pos_to_acc;
 
-extern set<DRAstate*, DRAstateComp> drastates;
+extern std::set<DRAstate*, DRAstateComp> drastates;
 extern DRAstate* dra_init;
 
 std::vector<int> accept_levels;
-vector<int*> finals_lists;
+std::vector<int*> finals_lists;
 int levels_num;
 
-set<RAstate*, RAstateComp> rastates;
-set<RAstate*, RAstateComp> raRemoved;
+std::set<RAstate*, RAstateComp> rastates;
+std::set<RAstate*, RAstateComp> raRemoved;
 RAstate* ra_init;
-queue<RAstate*> raqueue;
+std::queue<RAstate*> raqueue;
 int RAstate_id = 1;
 int dra::RAtrans_id = 1;
 
-extern vector<cset> removedI_sets;
-extern vector<bool> isRemoved;
+extern std::vector<cset> removedI_sets;
+extern std::vector<bool> isRemoved;
 extern int removedConds;
 
 // HOAF and ltl2dstar output
-map<int,RAstate*> dstarMap;
-map<int,int> id2dstar;
-map<RAstate*,int> rastate2Int;
-extern map<DRAstate*,int> state2Int;
+std::map<int,RAstate*> dstarMap;
+std::map<int,int> id2dstar;
+std::map<RAstate*,int> rastate2Int;
+extern std::map<DRAstate*,int> state2Int;
 
-list<RAstate*> init_copies;
+std::list<RAstate*> init_copies;
 
 /********************************************************************\
 |*        Implementation of some methods of auxiliary classes       *|
 \********************************************************************/
 
 void RAstate::insert_transition(bdd label, RAstate* to) const {
-  map<RAstate*, RAtrans>::iterator t = trans->find(to);
+  std::map<RAstate*, RAtrans>::iterator t = trans->find(to);
   if (t == trans->end()) {
-    trans->insert(make_pair(to, RAtrans(label, to)));
+    trans->insert(std::make_pair(to, RAtrans(label, to)));
     to->incoming++;
   } else {
     t->second.insert_label(label);
@@ -98,7 +97,7 @@ void RAstate::insert_transition(bdd label, RAstate* to) const {
 \********************************************************************/
 
 RAstate *find_rastate(RAstate* s) {
-  pair<set<RAstate*,RAstateComp>::iterator, bool> ret;
+  std::pair<std::set<RAstate*,RAstateComp>::iterator, bool> ret;
 
   ret = rastates.insert(s);
   if (ret.second) {
@@ -128,9 +127,9 @@ int next_level(const GenCond &cond, int level, int accept, int* f_list) /* compu
   return level;
 }
 
-vector<int> next_levels(const GenCondMap_t& conds, const vector<int>& old_levels) {
+std::vector<int> next_levels(const GenCondMap_t& conds, const std::vector<int>& old_levels) {
   int i;
-  vector<int> levels(levels_num, 0);
+  std::vector<int> levels(levels_num, 0);
 
   for (i = 0; i < levels_num; i++) {
     // Skip removed conditions
@@ -144,12 +143,12 @@ vector<int> next_levels(const GenCondMap_t& conds, const vector<int>& old_levels
 }
 
 void make_RAtrans(const RAstate *s) {
-  map<DRAstate*, DRAtrans>::iterator t_i;
-  map<GenCondMap_t, bdd>::iterator c_i;
+  std::map<DRAstate*, DRAtrans>::iterator t_i;
+  std::map<GenCondMap_t, bdd>::iterator c_i;
   
   for (t_i=s->d_state->trans->begin(); t_i!=s->d_state->trans->end(); t_i++) {
     for (c_i=t_i->second.conds_to_labels.begin(); c_i!=t_i->second.conds_to_labels.end(); c_i++) {
-      vector<int> levels = next_levels(c_i->first, s->levels);
+      std::vector<int> levels = next_levels(c_i->first, s->levels);
       RAstate* prod_to = new RAstate(t_i->first->id, levels, t_i->first);
       
       RAstate* to = find_rastate(prod_to);
@@ -179,7 +178,7 @@ bool ra_acceptance_match(RAstate *s1, RAstate *s2) {
 }
 
 bool all_ratrans_match(RAstate *s1, RAstate *s2) {
-  map<RAstate*, RAtrans>::iterator m_1, m_2;
+  std::map<RAstate*, RAtrans>::iterator m_1, m_2;
 
   if (s1->trans->size() != s2->trans->size())
     return false;
@@ -195,18 +194,18 @@ bool all_ratrans_match(RAstate *s1, RAstate *s2) {
   return true;
 }
 
-void decrement_incoming(map<RAstate*, RAtrans> *trans) {
-  map<RAstate*, RAtrans>::iterator t;
+void decrement_incoming(std::map<RAstate*, RAtrans> *trans) {
+  std::map<RAstate*, RAtrans>::iterator t;
   for(t = trans->begin(); t != trans->end(); t++)
       t->first->incoming--;
 }
 
 void remove_rastate(RAstate *s, RAstate *sub) {
-  set<RAstate*, RAstateComp>::iterator s_i;
+  std::set<RAstate*, RAstateComp>::iterator s_i;
 
   decrement_incoming(s->trans);
   delete s->trans;
-  s->trans = (map<RAstate*, RAtrans>*) 0;
+  s->trans = (std::map<RAstate*, RAtrans>*) 0;
   
   s->sub = sub;
   for (s_i = raRemoved.begin(); s_i != raRemoved.end(); s_i++)
@@ -216,10 +215,10 @@ void remove_rastate(RAstate *s, RAstate *sub) {
 }
 
 void retarget_all_ratrans() {
-  set<RAstate*, RAstateComp>::iterator s_i;
-  map<RAstate*, RAtrans>::iterator t_i, t_temp;
-  map<RAstate*, RAtrans>* trans;
-  map<GenCondMap_t, bdd>::iterator m_i;
+  std::set<RAstate*, RAstateComp>::iterator s_i;
+  std::map<RAstate*, RAtrans>::iterator t_i, t_temp;
+  std::map<RAstate*, RAtrans>* trans;
+  std::map<GenCondMap_t, bdd>::iterator m_i;
 
   if (raRemoved.size() == 0)
     return;
@@ -238,7 +237,7 @@ void retarget_all_ratrans() {
         t_i++;
         if (trans->find(t.to) == trans->end()) {
           // transition to t.to state does not exist -> create a new one
-          trans->insert(make_pair(t.to, t));
+          trans->insert(std::make_pair(t.to, t));
           t.to->incoming++;
         } else {
           // transition to t.to state does exist -> update it
@@ -266,7 +265,7 @@ void retarget_all_ratrans() {
 
 void simplify_rastates() {
   bool removed = false;
-  set<RAstate*, DRAstateComp>::iterator s_i, s_j, s_temp;
+  std::set<RAstate*, DRAstateComp>::iterator s_i, s_j, s_temp;
 
   do {
     for(s_i = rastates.begin(); s_i != rastates.end(); s_i++) {
@@ -303,7 +302,7 @@ void simplify_rastates() {
 
 void remove_redundant_ra_init() {
   if (ra_init->incoming == 0) {
-    list<RAstate*>::iterator i;
+    std::list<RAstate*>::iterator i;
     for (i=init_copies.begin(); i!=init_copies.end(); i++) {
       if ((*i)->incoming != 0) {
         // Delete old initial state
@@ -327,7 +326,7 @@ std::ostream& dra::operator<<(std::ostream &out, const RAstate &r) {
   int i;
   bool start = true;
 
-  cout << r.id << ": [" << r.d_state->id << ":<";
+  std::cout << r.id << ": [" << r.d_state->id << ":<";
   for (i = 0; i < levels_num; i++) {
     // Skip removed conditions
     if (tl_dra_opt && isRemoved[i])
@@ -385,7 +384,7 @@ std::ostream& dra::operator<<(std::ostream &out, const RAstate &r) {
       int i;
       bool start = true;
 
-      cout << r.id << ": [" << r.d_state->id << ":<";
+      std::cout << r.id << ": [" << r.d_state->id << ":<";
       for (i = 0; i < levels_num; i++) {
         // Skip removed conditions
         if (tl_dra_opt && isRemoved[i])
@@ -439,43 +438,43 @@ std::ostream& dra::operator<<(std::ostream &out, const RAtrans &t) {
 }
 
 void print_dra_hoaf_header(int states,
-                             map<RAstate*, int> rastate2Int,
-                             const map<int, pair<int, int> >& Zindex_to_hoaf,
-                           std::string ra_name = "DRA"
+                             std::map<RAstate*, int> rastate2Int,
+                             const std::map<int, std::pair<int, int> >& Zindex_to_hoaf,
+                             const std::string& ra_name = "DRA"
                              ) {
-  cout << "HOA: v1";
-  cout << "\ntool: \"ltl3dra\" \"" << VERSION_NUM << "\"";
-  cout << "\nname: \"" << ra_name << " for " << uform << "\"";
-  cout << "\nStates: " << states;
+  std::cout << "HOA: v1";
+  std::cout << "\ntool: \"ltl3dra\" \"" << VERSION_NUM << "\"";
+  std::cout << "\nname: \"" << ra_name << " for " << uform << "\"";
+  std::cout << "\nStates: " << states;
   if (states > 0) {
-    cout << "\nStart: " << rastate2Int[ra_init];
-    cout << "\nacc-name: Rabin " << Zindex_to_hoaf.size();
-    cout << "\nAcceptance: " << 2*Zindex_to_hoaf.size() << " ";
+    std::cout << "\nStart: " << rastate2Int[ra_init];
+    std::cout << "\nacc-name: Rabin " << Zindex_to_hoaf.size();
+    std::cout << "\nAcceptance: " << 2*Zindex_to_hoaf.size() << " ";
     if (Zindex_to_hoaf.size()>0) {
       for(int i = 0; i < Zindex_to_hoaf.size();++i) {
         if (i > 0)
-          cout << " | ";
-        cout << "(Fin(" << 2*i << ")&Inf(" << 2*i + 1 << "))";
+          std::cout << " | ";
+        std::cout << "(Fin(" << 2*i << ")&Inf(" << 2*i + 1 << "))";
       }
     } else {
-      cout << " f";
+      std::cout << " f";
     }
-    cout << "\nAP: " << predicates;
+    std::cout << "\nAP: " << predicates;
     for (int i = 0; i < predicates; ++i) {
-      cout << " \"" << sym_table[i] << "\"";
+      std::cout << " \"" << sym_table[i] << "\"";
     }
-    cout << "\nproperties: deterministic trans-labels explicit-labels state-acc no-univ-branch";
+    std::cout << "\nproperties: deterministic trans-labels explicit-labels state-acc no-univ-branch";
   } else {
-    cout << "\nacc-name: none";
-    cout << "\nAcceptance: 0 f";
+    std::cout << "\nacc-name: none";
+    std::cout << "\nAcceptance: 0 f";
   }
 }
 
 
-void print_ra_hoaf(std::ostream &out, std::string name = "") {
+void print_ra_hoaf(std::ostream &out, const std::string& name = "") {
   rastate2Int.clear();
-  set<RAstate*, RAstateComp>::iterator s_i;
-  map<RAstate*, RAtrans>::iterator t_i;
+  std::set<RAstate*, RAstateComp>::iterator s_i;
+  std::map<RAstate*, RAtrans>::iterator t_i;
   // Create the mapping from DRAstates to their HOAF id.
   int state_count = 0;
   for(s_i=rastates.begin(); s_i!=rastates.end(); s_i++) {
@@ -489,40 +488,40 @@ void print_ra_hoaf(std::ostream &out, std::string name = "") {
   out << "\n--BODY--";
   
   for(s_i=rastates.begin(); s_i!=rastates.end(); s_i++) {
-/*    out << "state " << (*s_i)->id << " : " << *(*s_i) << endl;*/
+/*    out << "state " << (*s_i)->id << " : " << *(*s_i) << std::endl;*/
     out << "\nState: " << rastate2Int[*s_i] << " " << *(*s_i);
     for(t_i=(*s_i)->trans->begin(); t_i!=(*s_i)->trans->end(); t_i++) {
       out << "\n  " << t_i->second;
     }
   }
-  out << "\n--END--" << endl;
+  out << "\n--END--" << std::endl;
 }
 
 void print_ra_old(std::ostream &out) {
-  set<RAstate*, RAstateComp>::iterator s_i;
-  map<RAstate*, RAtrans>::iterator t_i;
+  std::set<RAstate*, RAstateComp>::iterator s_i;
+  std::map<RAstate*, RAtrans>::iterator t_i;
 
-  out << "Init: " << *ra_init << endl;
+  out << "Init: " << *ra_init << std::endl;
   for(s_i=rastates.begin(); s_i!=rastates.end(); s_i++) {
-/*    out << "state " << (*s_i)->id << " : " << *(*s_i) << endl;*/
-    out << "state " << *(*s_i) << endl;
+/*    out << "state " << (*s_i)->id << " : " << *(*s_i) << std::endl;*/
+    out << "state " << *(*s_i) << std::endl;
     for(t_i=(*s_i)->trans->begin(); t_i!=(*s_i)->trans->end(); t_i++) {
-      out << "\t" << t_i->second << endl;
+      out << "\t" << t_i->second << std::endl;
     }
   }
 }
 
 
 void new_state(int dstarid,RAstate* state) {
-  dstarMap.insert(pair<int,RAstate*>(dstarid,state));
-  id2dstar.insert(pair<int,int>(state->id,dstarid));
+  dstarMap.insert(std::pair<int,RAstate*>(dstarid,state));
+  id2dstar.insert(std::pair<int,int>(state->id,dstarid));
 }
 
 void print_ra_ltl2dstar(std::ostream &out) {
-  set<RAstate*, RAstateComp>::iterator s_i;
-  map<RAstate*, RAtrans>::iterator t_i;
+  std::set<RAstate*, RAstateComp>::iterator s_i;
+  std::map<RAstate*, RAtrans>::iterator t_i;
 
-  list<bdd>::reverse_iterator l_i;
+  std::list<bdd>::reverse_iterator l_i;
   int id=0;
   int current_id=0;
 
@@ -530,18 +529,18 @@ void print_ra_ltl2dstar(std::ostream &out) {
   new_state(id++,ra_init);
 
   // Header
-  out << "DRA v2 explicit" << endl;
-  out << "Comment: \"Created by LTL3DRA v." << VERSION_NUM << "\"" << endl;
-  out << "States: " << rastates.size() << endl;
-  out << "Acceptance-Pairs: " << (Z_set.size()-removedConds) << endl;
-  out << "Start: 0" << endl;
+  out << "DRA v2 explicit" << std::endl;
+  out << "Comment: \"Created by LTL3DRA v." << VERSION_NUM << "\"" << std::endl;
+  out << "States: " << rastates.size() << std::endl;
+  out << "Acceptance-Pairs: " << (Z_set.size()-removedConds) << std::endl;
+  out << "Start: 0" << std::endl;
   out << "AP: " << sym_id;
   for (int i=0;i<sym_id;i++) out << " \"" << sym_table[i] << "\"";
-  out << endl << "---" << endl;
+  out << std::endl << "---" << std::endl;
 
   while (dstarMap[current_id]) {
       int skipped_Z = 0;
-      out << "State: " << current_id << endl;
+      out << "State: " << current_id << std::endl;
       out << "Acc-Sig: ";
       for (int l = 0; l < levels_num; l++) {
         // Skip removed conditions
@@ -554,7 +553,7 @@ void print_ra_ltl2dstar(std::ostream &out) {
         if (dstarMap[current_id]->levels[l] == -1)
           out << " -" << l-skipped_Z;
       }
-      out << endl;
+      out << std::endl;
 
       // Transitions
       for(l_i=det_constraints.rbegin(); l_i!=det_constraints.rend(); ++l_i) {
@@ -564,7 +563,7 @@ void print_ra_ltl2dstar(std::ostream &out) {
               if (id2dstar.find(t_i->second.to->id) == id2dstar.end()) {
                  new_state(id++,t_i->second.to);
               }
-            out << id2dstar[t_i->second.to->id] << endl;
+            out << id2dstar[t_i->second.to->id] << std::endl;
             break;
           }
         }
@@ -574,7 +573,7 @@ void print_ra_ltl2dstar(std::ostream &out) {
 
   /*// States and transitions
   for(s_i=rastates.begin(); s_i!=rastates.end(); s_i++) {
-    out << "State: " << (*s_i)->id << endl;
+    out << "State: " << (*s_i)->id << std::endl;
     out << "Acc-Sig: ";
     for (int l = 0; l < levels_num; l++) {
       // Skip removed conditions
@@ -585,14 +584,14 @@ void print_ra_ltl2dstar(std::ostream &out) {
       if ((*s_i)->levels[l] == -1)
         out << " -" << l;
     }
-    out << endl;
+    out << std::endl;
 
     // Transitions
     for(l_i=det_constraints.rbegin(); l_i!=det_constraints.rend(); ++l_i) {
       // Search for appropriete transition that covers label l_i
       for(t_i=(*s_i)->trans->begin();t_i!=(*s_i)->trans->end();t_i++) {
         if ((*l_i >> t_i->second.label)==bdd_true()) {
-          out << t_i->second.to->id << endl;
+          out << t_i->second.to->id << std::endl;
           break;
         }
       }
@@ -601,9 +600,9 @@ void print_ra_ltl2dstar(std::ostream &out) {
 }
 
 void printGoalTrans(std::ostream &out) {
-out << "\t\t<Transition tid=\"" << tid++ << "\">" << endl;
-out << "\t\t\t<From>" << from << "</From>" << endl;
-out << "\t\t\t<To>" << to << "</To>" << endl;
+out << "\t\t<Transition tid=\"" << tid++ << "\">" << std::endl;
+out << "\t\t\t<From>" << from << "</From>" << std::endl;
+out << "\t\t\t<To>" << to << "</To>" << std::endl;
 }
 
 
@@ -612,11 +611,11 @@ void goalPrintHandler(char* varset, int size)
   int print_and = 0;
 
   if (print_or) {
-      *goal_output << "\t\t\t</Label>" << endl;
-      *goal_output << "\t\t\t<Properties/>" << endl;
-      *goal_output << "\t\t</Transition>" << endl;
+      *goal_output << "\t\t\t</Label>" << std::endl;
+      *goal_output << "\t\t\t<Properties/>" << std::endl;
+      *goal_output << "\t\t</Transition>" << std::endl;
       printGoalTrans(*goal_output);
-      *goal_output << "\t\t<Label>" << endl;
+      *goal_output << "\t\t<Label>" << std::endl;
   }
   //fprintf(tl_out, "(");
   for (int v=0; v<size; v++)
@@ -636,9 +635,9 @@ void goalPrintHandler(char* varset, int size)
 }
 
 void print_ra_goal(std::ostream &out) {
-  set<RAstate*, RAstateComp>::iterator s_i;
-  map<RAstate*, RAtrans>::iterator t_i;
-  vector<vector<int> > acc(levels_num),rej(levels_num);
+  std::set<RAstate*, RAstateComp>::iterator s_i;
+  std::map<RAstate*, RAtrans>::iterator t_i;
+  std::vector<std::vector<int> > acc(levels_num),rej(levels_num);
   RAtrans tr;
 
   gout = &out;
@@ -646,27 +645,27 @@ void print_ra_goal(std::ostream &out) {
   print_or = 0;
 
   // Print preface
-  out << "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" << endl;
-  out << "<Structure label-on=\"Transition\" type=\"FiniteStateAutomaton\">" << endl;
-  out << "\t<Name/>\n\t<Description/>" << endl << endl;
+  out << "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" << std::endl;
+  out << "<Structure label-on=\"Transition\" type=\"FiniteStateAutomaton\">" << std::endl;
+  out << "\t<Name/>\n\t<Description/>" << std::endl << std::endl;
 
   // Print alphabet
-  out << "\t<Alphabet type=\"Propositional\">" << endl;
+  out << "\t<Alphabet type=\"Propositional\">" << std::endl;
   for (int i = 0; i < sym_id; i++) {
-      out << "\t\t<Proposition>" << sym_table[i] << "</Proposition>" << endl;
+      out << "\t\t<Proposition>" << sym_table[i] << "</Proposition>" << std::endl;
   }
-  out << "\t</Alphabet>" << endl << endl;
+  out << "\t</Alphabet>" << std::endl << std::endl;
 
   // Print states
-  out << "\t<StateSet>" << endl;
+  out << "\t<StateSet>" << std::endl;
   for (s_i = rastates.begin(); s_i != rastates.end(); s_i++) {
     RAstate r = *(*s_i);
-    out << "\t\t<State sid=\"" << r.id << "\">" << endl;
-    //out << "\t\t\t<Description>" << *(*s_i) << "</Description>" << endl;
-    out << "\t\t\t<Properties>" << endl;
-    out << "\t\t\t\t<Entry name=\"Generalized state\">" << r.d_state->id << "</Entry>" << endl;
-    out << "\t\t\t</Properties>" << endl;
-    out << "\t\t</State>" << endl;
+    out << "\t\t<State sid=\"" << r.id << "\">" << std::endl;
+    //out << "\t\t\t<Description>" << *(*s_i) << "</Description>" << std::endl;
+    out << "\t\t\t<Properties>" << std::endl;
+    out << "\t\t\t\t<Entry name=\"Generalized state\">" << r.d_state->id << "</Entry>" << std::endl;
+    out << "\t\t\t</Properties>" << std::endl;
+    out << "\t\t</State>" << std::endl;
 
     // Store the state into right accepting sets
     for (int i = 0; i < levels_num; i++) {
@@ -678,15 +677,15 @@ void print_ra_goal(std::ostream &out) {
           rej[i].push_back(r.id);
     }
   }
-  out << "\t</StateSet>" << endl << endl;
+  out << "\t</StateSet>" << std::endl << std::endl;
 
   // Print initial state
-  out << "\t<InitialStateSet>" << endl;
-  out << "\t\t<StateID>" << ra_init->id << "</StateID>" << endl;
-  out << "\t</InitialStateSet>" << endl << endl;
+  out << "\t<InitialStateSet>" << std::endl;
+  out << "\t\t<StateID>" << ra_init->id << "</StateID>" << std::endl;
+  out << "\t</InitialStateSet>" << std::endl << std::endl;
 
   // Print transitions
-  out << "\t<TransitionSet>" << endl;
+  out << "\t<TransitionSet>" << std::endl;
   for (s_i = rastates.begin(); s_i != rastates.end(); s_i++) {
     for(t_i=(*s_i)->trans->begin(); t_i!=(*s_i)->trans->end(); t_i++) {
       tr = t_i->second;
@@ -701,37 +700,37 @@ void print_ra_goal(std::ostream &out) {
         out << "True";
       else
           bdd_allsat(tr.label, goalPrintHandler);
-      out << "</Label>" << endl;
+      out << "</Label>" << std::endl;
 
-      out << "\t\t\t<Properties/>" << endl;
-      out << "\t\t</Transition>" << endl;
+      out << "\t\t\t<Properties/>" << std::endl;
+      out << "\t\t</Transition>" << std::endl;
     }
   }
-  out << "\t</TransitionSet>" << endl << endl;
+  out << "\t</TransitionSet>" << std::endl << std::endl;
 
   // Print acceptance condition
-  out << "\t<Acc type=\"Rabin\">" << endl;
+  out << "\t<Acc type=\"Rabin\">" << std::endl;
   for (int i = 0; i < levels_num; i++) {
     if (tl_dra_opt && isRemoved[i])
       continue;
-    out << "\t\t<AccPair>" << endl;
-    out << "\t\t\t<F>" << endl;
+    out << "\t\t<AccPair>" << std::endl;
+    out << "\t\t\t<F>" << std::endl;
     for (int j = 0; j < acc[i].size();j++) {
-      out << "\t\t\t\t<StateID>" << acc[i][j] << "</StateID>" << endl;
+      out << "\t\t\t\t<StateID>" << acc[i][j] << "</StateID>" << std::endl;
     }
-    out << "\t\t\t</F>" << endl;
-    out << "\t\t\t<E>" << endl;
+    out << "\t\t\t</F>" << std::endl;
+    out << "\t\t\t<E>" << std::endl;
     for (int j = 0; j < rej[i].size();j++) {
-      out << "\t\t\t\t<StateID>" << rej[i][j] << "</StateID>" << endl;
+      out << "\t\t\t\t<StateID>" << rej[i][j] << "</StateID>" << std::endl;
     }
-    out << "\t\t\t</E>" << endl;
-    out << "\t\t</AccPair>" << endl;
+    out << "\t\t\t</E>" << std::endl;
+    out << "\t\t</AccPair>" << std::endl;
   }
-  out << "\t</Acc>" << endl << endl;
+  out << "\t</Acc>" << std::endl << std::endl;
 
   // Print enclosure
-  out << "\t<Properties/>" << endl;
-  out << "</Structure>" << endl;
+  out << "\t<Properties/>" << std::endl;
+  out << "</Structure>" << std::endl;
 }
 
 /*******************************************************************\
@@ -742,7 +741,7 @@ void print_ra_goal(std::ostream &out) {
    under different labels                                        */
 int get_dra_edges() {
     int count = 0;
-    set<DRAstate*, DRAstateComp>::iterator s_i;
+    std::set<DRAstate*, DRAstateComp>::iterator s_i;
     // Iterates over states
     for (s_i = drastates.begin();s_i != drastates.end();s_i++) {
       DRAstate s = *(*s_i);
@@ -755,7 +754,7 @@ int get_dra_edges() {
     }
     return count;
 //  int count = 0;
-//  set<DRAstate*, DRAstateComp>::iterator s_i;
+//  std::set<DRAstate*, DRAstateComp>::iterator s_i;
 //  for (s_i = drastates.begin();s_i != drastates.end();s_i++) {
 //      count += (*(s_i))->trans->second.conds_to_labels.size();
 //  }
@@ -763,14 +762,14 @@ int get_dra_edges() {
 }
 int get_dra_trans() {
     int count = 0;
-    set<DRAstate*, DRAstateComp>::iterator s_i;
+    std::set<DRAstate*, DRAstateComp>::iterator s_i;
     for (s_i = drastates.begin();s_i != drastates.end();s_i++) {
       DRAstate s = *(*s_i);
       std::map<DRAstate*, DRAtrans>::iterator edge;
       // Iterates over edges and counts transitions
       for (edge = (s.trans)->begin();edge != (s.trans)->end();edge++) {
-         map<GenCondMap_t, bdd> cond = edge->second.conds_to_labels;
-         map<GenCondMap_t, bdd>::iterator c;
+         std::map<GenCondMap_t, bdd> cond = edge->second.conds_to_labels;
+         std::map<GenCondMap_t, bdd>::iterator c;
          // Iterates over edges and counts respective transitions
          for (c = cond.begin();c != cond.end();c++) {
              count+= bdd_satcount(c->second);
@@ -781,7 +780,7 @@ int get_dra_trans() {
 }
 int get_ra_edges() {
     int count = 0;
-    set<RAstate*, RAstateComp>::iterator s_i;
+    std::set<RAstate*, RAstateComp>::iterator s_i;
     for (s_i = rastates.begin();s_i != rastates.end();s_i++) {
       count += (*(s_i))->trans->size();
     }
@@ -789,7 +788,7 @@ int get_ra_edges() {
 }
 int get_ra_trans() {
     int count = 0;
-    set<RAstate*, RAstateComp>::iterator s_i;
+    std::set<RAstate*, RAstateComp>::iterator s_i;
     for (s_i = rastates.begin();s_i != rastates.end();s_i++) {
       std::map<RAstate *, RAtrans>::iterator e_i;
       for(e_i = (*s_i)->trans->begin();e_i != (*s_i)->trans->end();e_i++) {
@@ -801,7 +800,7 @@ int get_ra_trans() {
 
 int get_acc_size() {
     int size = 0;
-    set<cset>::iterator s_i;
+    std::set<cset>::iterator s_i;
     cset temp;
     for (s_i = Z_set.begin(); s_i != Z_set.end(); s_i++) {
       int i = Z_setToInt[*s_i]-1;
@@ -821,7 +820,7 @@ void mk_ra()
   accept_levels.resize(levels_num);
   finals_lists.resize(levels_num);
   {
-    set<cset>::iterator s_i;
+    std::set<cset>::iterator s_i;
     cset temp;
     for (s_i = Z_set.begin(); s_i != Z_set.end(); s_i++) {
       temp.intersect_sets(*s_i, final_set);
@@ -850,11 +849,11 @@ void mk_ra()
   
   if (tl_verbose && tl_simp_diff && !tl_dra_stats) {
     if (tl_verbose == 1) {
-        cout << endl << endl << "DRA before simplification" << endl;
-        print_ra_old(cout);
-        cout << endl;
+        std::cout << std::endl << std::endl << "DRA before simplification" << std::endl;
+        print_ra_old(std::cout);
+        std::cout << std::endl;
     } else {
-    print_ra_hoaf(cout, "DRA before simplification");
+    print_ra_hoaf(std::cout, "DRA before simplification");
     }
   }
   
@@ -866,20 +865,20 @@ void mk_ra()
 //  if (!tl_dra_stats) {
 //  fprintf(tl_out, "\nDRA in internal format\n");
   if (tl_verbose == 1) {
-    cout << "DRA after simplification" << endl;
-    print_ra_old(cout);
-    cout << endl << endl << "DRA in ltl2dstar format" << endl << endl;
+    std::cout << "DRA after simplification" << std::endl;
+    print_ra_old(std::cout);
+    std::cout << std::endl << std::endl << "DRA in ltl2dstar format" << std::endl << std::endl;
   }
 
   if (tl_spot_out == 3)
-    print_ra_old(cout);
+    print_ra_old(std::cout);
 
   if (tl_verbose == 2 || tl_hoaf == 3) {
-    print_ra_hoaf(cout);
+    print_ra_hoaf(std::cout);
   }
 
   if (tl_dra_ltl2dstar)
-    print_ra_ltl2dstar(cout);
+    print_ra_ltl2dstar(std::cout);
 //  }
 
   if(tl_dra_goal) {
@@ -887,27 +886,27 @@ void mk_ra()
     goal_output->flush();
     automaton->flush();
     automaton->close();
-//  cout << rastates.size() << "(" << (Z_set.size()-removedConds) << ") & " << drastates.size() << " \\\\ \\hline " << endl;
+//  std::cout << rastates.size() << "(" << (Z_set.size()-removedConds) << ") & " << drastates.size() << " \\\\ \\hline " << std::endl;
   }
 
 //  if(!tl_dra_stats && !tl_verbose) {
-//  cout << endl << "-----------------------------------" << endl << endl;
-//  cout << "Acceptance-Pairs: " << (Z_set.size()-removedConds) << endl;
-//  cout << "States: " << rastates.size() << endl;
-//  cout << "States of generalized automaton: " << drastates.size() << endl;
+//  std::cout << std::endl << "-----------------------------------" << std::endl << std::endl;
+//  std::cout << "Acceptance-Pairs: " << (Z_set.size()-removedConds) << std::endl;
+//  std::cout << "States: " << rastates.size() << std::endl;
+//  std::cout << "States of generalized automaton: " << drastates.size() << std::endl;
 //  }
 
   if(tl_dra_stats || tl_verbose) {
     if (tl_verbose)
-      cout << endl << "-----------------------------------\n";
-    cout << "\nStates of TGDRA: " << drastates.size();
-    cout << "\nEdges of TGDRA: " << get_dra_edges();
-    cout << "\nTransitions of TGDRA: " << get_dra_trans();
-    cout << "\nAcceptance-Pairs: " << (Z_set.size()-removedConds);
-    cout << "\nInfinite-Sets: " << get_acc_size();
-    cout << "\nStates of DRA: " << rastates.size();
-    cout << "\nEdges of DRA: " << get_ra_edges();
-    cout << "\nTransitions of DRA: " << get_ra_trans() << endl;
+      std::cout << std::endl << "-----------------------------------\n";
+    std::cout << "\nStates of TGDRA: " << drastates.size();
+    std::cout << "\nEdges of TGDRA: " << get_dra_edges();
+    std::cout << "\nTransitions of TGDRA: " << get_dra_trans();
+    std::cout << "\nAcceptance-Pairs: " << (Z_set.size()-removedConds);
+    std::cout << "\nInfinite-Sets: " << get_acc_size();
+    std::cout << "\nStates of DRA: " << rastates.size();
+    std::cout << "\nEdges of DRA: " << get_ra_edges();
+    std::cout << "\nTransitions of DRA: " << get_ra_trans() << std::endl;
   }
 
   for (int i = 0; i < levels_num; i++) {

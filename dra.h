@@ -5,7 +5,6 @@
 #include <list>
 #include <vector>
 
-using namespace std;
 namespace dra {
 
 GState *find_gstate(cset *set, GState *s);
@@ -26,12 +25,12 @@ class DRAstate {
     
     std::map<DRAstate*, DRAtrans>* trans;
     
-    DRAstate() { this->id = 0; trans = new map<DRAstate*, DRAtrans>(); this->incoming = 0; sub = NULL; }
-    DRAstate(int id) { this->id = id; trans = new map<DRAstate*, DRAtrans>(); this->incoming = 0; sub = NULL; }
-    DRAstate(int id, cset& s) { this->id = id; this->sets.insert(s); trans = new map<DRAstate*, DRAtrans>();
+    DRAstate() { this->id = 0; trans = new std::map<DRAstate*, DRAtrans>(); this->incoming = 0; sub = NULL; }
+    DRAstate(int id) { this->id = id; trans = new std::map<DRAstate*, DRAtrans>(); this->incoming = 0; sub = NULL; }
+    DRAstate(int id, cset& s) { this->id = id; this->sets.insert(s); trans = new std::map<DRAstate*, DRAtrans>();
                                 this->incoming = 0; sub = NULL; }
     DRAstate(const DRAstate &s) { this->id = s.id; this->sets = s.sets;
-                                  if (s.trans) this->trans = new map<DRAstate*, DRAtrans>(*s.trans);
+                                  if (s.trans) this->trans = new std::map<DRAstate*, DRAtrans>(*s.trans);
                                   this->incoming = s.incoming; this->sub = s.sub; }
     ~DRAstate() { if (trans) delete trans; }
     
@@ -62,9 +61,9 @@ class GenCond {
     * member of the F-set (the bool allowed), and whether it is a member of the I_i sets (the bool vector f_accepting) */
   public:
     bool allowed;
-    vector<bool> f_accepting;
+    std::vector<bool> f_accepting;
     
-    GenCond(int size) { f_accepting = vector<bool>(size, false); }
+    GenCond(int size) { f_accepting = std::vector<bool>(size, false); }
     GenCond(const GenCond &c) { allowed = c.allowed; f_accepting = c.f_accepting; }
     
     bool operator<(const GenCond &c) const { return ((allowed < c.allowed) || (allowed == c.allowed && f_accepting < c.f_accepting)); }
@@ -76,7 +75,7 @@ class GenCond {
     bool print_hoaf(std::ostream &out, int Z_i, bool first) const;
 };
 
-typedef map<int, GenCond> GenCondMap_t;
+typedef std::map<int, GenCond> GenCondMap_t;
 
 extern int DRAtrans_id;
 
@@ -95,7 +94,7 @@ class DRAtrans {
   
     DRAstate* to;
     // Maps conditions to labels with that condition
-    map<GenCondMap_t, bdd> conds_to_labels;
+    std::map<GenCondMap_t, bdd> conds_to_labels;
     
     DRAtrans(bdd l, const DRAstate* f, DRAstate* t) { to = t; id = DRAtrans_id++; insert_label(f, l); }
     DRAtrans(const DRAtrans &t) { this->to = t.to; id = t.id; conds_to_labels = t.conds_to_labels; }
@@ -108,7 +107,12 @@ class DRAtrans {
     
     void insert_label(const DRAstate* from, bdd l);
     
-    void remove_redundant_acc_conds(const list<int>& toBeRemoved);
+    void remove_redundant_acc_conds(const std::list<int>& toBeRemoved);
 };
+
+// Declare all stream operators in dra namespace.
+std::ostream& operator<<(std::ostream &out, const DRAstate &r);
+std::ostream& operator<<(std::ostream &out, const GenCond &t);
+std::ostream& operator<<(std::ostream &out, const DRAtrans &t);
 
 }

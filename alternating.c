@@ -45,12 +45,11 @@
 #include <bdd.h>
 #include <map>
 #include <set>
+#include <queue>
 #define NO 0
 #define YES 1
 /* Define whether to use supplementary outputs or not */
 #define SUPP_OUT NO
-
-using namespace std;
 
 /********************************************************************\
 |*              Structures and shared variables                     *|
@@ -63,7 +62,7 @@ extern std::string uform;
 
 Node **label;
 char **sym_table;
-map<cset, ATrans*> **transition;
+std::map<cset, ATrans*> **transition;
 
 int *final_set, node_id = 1, sym_id = 0, node_size, sym_size, nodes_num;
 int astate_count = 0, atrans_count = 0;
@@ -73,9 +72,9 @@ int *INFp_nodes, *UXp_nodes, *GFcomp_nodes, *Falpha_nodes, **predecessors, *teck
 
 int predicates;
 
-set<cset> Z_set;
+std::set<cset> Z_set;
 
-map<cset, ATrans*> *build_alternating(Node *p);
+std::map<cset, ATrans*> *build_alternating(Node *p);
 
 /********************************************************************\
 |*              Generation of the alternating automaton             *|
@@ -171,7 +170,7 @@ int get_sym_id(char *s) /* finds the id of a predicate, or atttributes one */
 }
 
 
-void add_trans(map<cset, ATrans*>* result, const cset& to, ATrans* tmp)
+void add_trans(std::map<cset, ATrans*>* result, const cset& to, ATrans* tmp)
 {
   // First check whether there already exists a transtion leading
   // to the same node "to". If so, merge it with the new transition.
@@ -184,7 +183,7 @@ void add_trans(map<cset, ATrans*>* result, const cset& to, ATrans* tmp)
   }
 }
 
-void add_dup_trans(map<cset, ATrans*>* result, const cset& to, ATrans* tmp)
+void add_dup_trans(std::map<cset, ATrans*>* result, const cset& to, ATrans* tmp)
 {
   // First check whether there already exists a transtion leading
   // to the same node "to". If so, merge it with the new transition.
@@ -196,15 +195,15 @@ void add_dup_trans(map<cset, ATrans*>* result, const cset& to, ATrans* tmp)
   }
 }
 
-map<cset, ATrans*> *boolean(Node *p) /* computes the transitions to boolean nodes -> next & init */
+std::map<cset, ATrans*> *boolean(Node *p) /* computes the transitions to boolean nodes -> next & init */
 {
   ATrans *t;
-  map<cset, ATrans*>::iterator t1, t2;
-  map<cset, ATrans*> *lft, *rgt, *result = (map<cset, ATrans*> *)0;
+  std::map<cset, ATrans*>::iterator t1, t2;
+  std::map<cset, ATrans*> *lft, *rgt, *result = (std::map<cset, ATrans*> *)0;
 
   switch(p->ntyp) {
   case TRUE:
-    result = new map<cset, ATrans*>();
+    result = new std::map<cset, ATrans*>();
     t = emalloc_atrans();
     t->label = bdd_true();
     add_trans(result, cset(0), t);
@@ -219,7 +218,7 @@ map<cset, ATrans*> *boolean(Node *p) /* computes the transitions to boolean node
           ATrans *tmp = merge_trans(t1->second, t2->second);
           if(tmp) {
             if (!result)
-              result = new map<cset, ATrans*>();
+              result = new std::map<cset, ATrans*>();
             cset to(0);
             to.merge(t1->first, t2->first);
             add_trans(result, to, tmp);
@@ -231,7 +230,7 @@ map<cset, ATrans*> *boolean(Node *p) /* computes the transitions to boolean node
     break;
   case OR:
     lft = boolean(p->lft);
-    result = new map<cset, ATrans*>();
+    result = new std::map<cset, ATrans*>();
     if (lft)
       for(t1 = lft->begin(); t1 != lft->end(); t1++) {
         ATrans *tmp = dup_trans(t1->second);
@@ -247,7 +246,7 @@ map<cset, ATrans*> *boolean(Node *p) /* computes the transitions to boolean node
     break;
   default:
     build_alternating(p);
-    result = new map<cset, ATrans*>();
+    result = new std::map<cset, ATrans*>();
     t = emalloc_atrans();
     t->label = bdd_true();
     add_trans(result, cset(already_done(p), 0), t);
@@ -255,11 +254,11 @@ map<cset, ATrans*> *boolean(Node *p) /* computes the transitions to boolean node
   return result;
 }
 
-map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automaton for p */
+std::map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automaton for p */
 {
   ATrans *t;
-  map<cset, ATrans*>::iterator t1, t2;
-  map<cset, ATrans*> *lft, *rgt, *result = (map<cset, ATrans*> *)0;
+  std::map<cset, ATrans*>::iterator t1, t2;
+  std::map<cset, ATrans*> *lft, *rgt, *result = (std::map<cset, ATrans*> *)0;
   cset to(0);
   int node = already_done(p);
   if(node >= 0) return transition[node];
@@ -268,7 +267,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
   switch (p->ntyp) {
 
   case TRUE:
-    result = new map<cset, ATrans*>();
+    result = new std::map<cset, ATrans*>();
     t = emalloc_atrans();
     t->label = bdd_true();
     add_trans(result, to, t);
@@ -276,14 +275,14 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
     break;
 
   case PREDICATE:
-    result = new map<cset, ATrans*>();
+    result = new std::map<cset, ATrans*>();
     t = emalloc_atrans();
     t->label = bdd_ithvar(get_sym_id(p->sym->name));
     add_trans(result, to, t);
     break;
 
   case NOT:
-    result = new map<cset, ATrans*>();
+    result = new std::map<cset, ATrans*>();
     t = emalloc_atrans();
     t->label = bdd_nithvar(get_sym_id(p->lft->sym->name));
     add_trans(result, to, t);
@@ -294,7 +293,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
     if (!tl_determinize && !tl_det_m) {
       result = boolean(p->lft);
     } else {
-      result = new map<cset, ATrans*>();
+      result = new std::map<cset, ATrans*>();
       build_alternating(p->lft);
       t = emalloc_atrans();
       t->label = bdd_true();
@@ -306,7 +305,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
   case U_OPER:    /* p U q <-> q || (p && X (p U q)) */
 #ifdef DRA
     if (tl_dra_alt && is_F(p) && is_Gdisj(p->rgt)) {
-      result = new map<cset, ATrans*>();
+      result = new std::map<cset, ATrans*>();
       rgt = build_alternating(p->rgt);
       if (rgt)
         for(t2 = rgt->begin(); t2 != rgt->end(); t2++) {
@@ -332,7 +331,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
       ATrans *tmp = dup_trans(rgt->begin()->second);
       tmp->label = bdd_true();
       to = rgt->begin()->first;
-      result = new map<cset, ATrans*>();
+      result = new std::map<cset, ATrans*>();
       add_trans(result, to, tmp);
       tmp = emalloc_atrans();
       tmp->label = bdd_true();
@@ -343,7 +342,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
       break;
     }
 #endif
-    result = new map<cset, ATrans*>();
+    result = new std::map<cset, ATrans*>();
     if (tl_determinize && is_LTL(p->rgt))
       determ = 1;
     rgt = build_alternating(p->rgt);
@@ -419,7 +418,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
   case V_OPER:    /* p V q <-> (p && q) || (q && X (p V q)) */
 #ifdef DRA
     if (tl_dra_alt && is_G(p) && is_Fconj(p->rgt)) {
-      map<cset, ATrans*>* temp = boolean(p->rgt);
+      std::map<cset, ATrans*>* temp = boolean(p->rgt);
       if (temp->size() != 1) {
         printf("ltl3dra: unexpected/unsound result during WVAA creation");
         free_atrans_map(temp);
@@ -429,13 +428,13 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
       ATrans *tmp = dup_trans(temp->begin()->second);
       to = temp->begin()->first;
       to.insert(node_id);
-      result = new map<cset, ATrans*>();
+      result = new std::map<cset, ATrans*>();
       add_trans(result, to, tmp);
       free_atrans_map(temp);
       break;
     }
     if (tl_dra_alt && is_G(p) && is_Fdisj(p->rgt)) {
-      result = new map<cset, ATrans*>();
+      result = new std::map<cset, ATrans*>();
       rgt = boolean(p->rgt);
       if (rgt)
         for(t2 = rgt->begin(); t2 != rgt->end(); t2++) {
@@ -458,7 +457,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
       for(t1 = rgt->begin(); t1 != rgt->end(); t1++) {
         ATrans *tmp;
         if (!result)
-          result = new map<cset, ATrans*>();
+          result = new std::map<cset, ATrans*>();
 
 /*        if (!tl_alt || !in_set(INFp_nodes, node)) {*/
           if (lft) {
@@ -474,7 +473,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
           tmp = dup_trans(t1->second);  /* q */
 /*          to = t1->first;
           to.insert(node);  /* Xp && q */
-/*          result->insert(pair<cset, ATrans*>(to, tmp));  
+/*          result->insert(std::pair<cset, ATrans*>(to, tmp));  
         }*/
 
       tmp = dup_trans(t1->second);  /* q */
@@ -499,7 +498,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
     rgt = build_alternating(p->rgt);
     if (tl_alt && (p->lft->ntyp == V_OPER || p->lft->ntyp == U_OPER) && 
         is_INFp(p->lft)) {
-      lft = new map<cset, ATrans*>();
+      lft = new std::map<cset, ATrans*>();
       t = emalloc_atrans();
       t->label = bdd_true();
       add_trans(lft, cset(already_done(p->lft), 0), t);
@@ -507,7 +506,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
     }
     if (tl_alt && (p->rgt->ntyp == V_OPER || p->rgt->ntyp == U_OPER) &&
         is_INFp(p->rgt)) {
-      rgt = new map<cset, ATrans*>();
+      rgt = new std::map<cset, ATrans*>();
       t = emalloc_atrans();
       t->label = bdd_true();
       add_trans(rgt, cset(already_done(p->rgt), 0), t);
@@ -519,7 +518,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
           ATrans *tmp = merge_trans(t1->second, t2->second);
           if(tmp) {
             if (!result)
-              result = new map<cset, ATrans*>();
+              result = new std::map<cset, ATrans*>();
             cset to(0);
             to.merge(t1->first, t2->first);
             add_trans(result, to, tmp);
@@ -533,12 +532,12 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
     break;
 
   case OR:
-    result = new map<cset, ATrans*>();
+    result = new std::map<cset, ATrans*>();
     lft = build_alternating(p->lft);
     rgt = build_alternating(p->rgt);
     if (tl_alt && (p->lft->ntyp == V_OPER || p->lft->ntyp == U_OPER) && 
         is_INFp(p->lft)) {
-      lft = new map<cset, ATrans*>();
+      lft = new std::map<cset, ATrans*>();
       t = emalloc_atrans();
       t->label = bdd_true();
       add_trans(lft, cset(already_done(p->lft), 0), t);
@@ -546,7 +545,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
     }
     if (tl_alt && (p->rgt->ntyp == V_OPER || p->rgt->ntyp == U_OPER) &&
         is_INFp(p->rgt)) {
-      rgt = new map<cset, ATrans*>();
+      rgt = new std::map<cset, ATrans*>();
       t = emalloc_atrans();
       t->label = bdd_true();
       add_trans(rgt, cset(already_done(p->rgt), 0), t);
@@ -615,7 +614,7 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
             t2->second->label &= ! t1->second->label;
             
             if (t2->second->label == bdd_false()) {
-              map<cset, ATrans*>::iterator tx = t2++;
+              std::map<cset, ATrans*>::iterator tx = t2++;
               free_atrans(tx->second, 0);
               result->erase(tx);
             } else {
@@ -648,11 +647,9 @@ map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating automato
 /********************************************************************\
 |*        Simplification of the alternating automaton               *|
 \********************************************************************/
-void allsatPrintHandler(char* varset, int size);
-
-void simplify_atrans(map<cset, ATrans*> *trans) /* simplifies the transitions */
+void simplify_atrans(std::map<cset, ATrans*> *trans) /* simplifies the transitions */
 {
-  map<cset, ATrans*>::iterator t1, t2, tx;
+  std::map<cset, ATrans*>::iterator t1, t2, tx;
   if(trans)
     for(t1 = trans->begin(); t1 != trans->end(); t1++) {
       for(t2 = t1, t2++; t2 != trans->end(); ) {
@@ -671,7 +668,7 @@ void simplify_atrans(map<cset, ATrans*> *trans) /* simplifies the transitions */
 
 void simplify_astates() /* simplifies the alternating automaton */
 {
-  map<cset, ATrans*>::iterator t;
+  std::map<cset, ATrans*>::iterator t;
   int i, *acc = make_set(-1, 0); /* no state is accessible initially */
 
   if (transition[0])
@@ -682,7 +679,7 @@ void simplify_astates() /* simplifies the alternating automaton */
     if (!in_set(acc, i)) { /* frees unaccessible states */
       label[i] = ZN;
       free_atrans_map(transition[i]);
-      transition[i] = (map<cset, ATrans*> *)0;
+      transition[i] = (std::map<cset, ATrans*> *)0;
       // remove from final_set as well
       rem_set(final_set, i);
       continue;
@@ -745,54 +742,54 @@ void allsatPrintHandler_hoaf(char* varset, int size)
 }
 
 void print_alternating_hoaf_state(const cset& set,
-                                  const map<int, int>& astate2Int,
+                                  const std::map<int, int>& astate2Int,
                                   int true_state) {
   if (set.empty()) {
-    cout << true_state;
+    std::cout << true_state;
   } else {
     int *list = set.to_list();
     for(int i = 1; i < list[0]; i++) {
       if (i > 1)
-        cout << "&";
-      cout << astate2Int.find(list[i])->second;
+        std::cout << "&";
+      std::cout << astate2Int.find(list[i])->second;
     }
     tfree(list);
   }
 }
 
 void print_alternating_hoaf_header(int states,
-                                   const map<int, int>& astate2Int,
-                                   std::string name = "VWAA for ") {
-  cout << "HOA: v1" << endl;
-  cout << "tool: \"ltl3dra\" \"" << VERSION_NUM << "\"" << endl;
-  cout << "name: \"" << name << uform << "\"" << endl;
-  cout << "States: " << states << endl;
+                                   const std::map<int, int>& astate2Int,
+                                   const std::string& name = "VWAA for ") {
+  std::cout << "HOA: v1" << std::endl;
+  std::cout << "tool: \"ltl3dra\" \"" << VERSION_NUM << "\"" << std::endl;
+  std::cout << "name: \"" << name << uform << "\"" << std::endl;
+  std::cout << "States: " << states << std::endl;
   if (states > 0) {
     if (transition[0]) {
-      map<cset, ATrans*>::iterator t;
+      std::map<cset, ATrans*>::iterator t;
       for(t = transition[0]->begin(); t != transition[0]->end(); t++) {
-        cout << "Start: ";
+        std::cout << "Start: ";
         print_alternating_hoaf_state(t->first, astate2Int, states-1);
-        cout << endl;
+        std::cout << std::endl;
       }
     }
-    cout << "acc-name: co-Buchi" << endl;
-    cout << "Acceptance: 1 Fin(0)" << endl;
-    cout << "AP: " << predicates;
+    std::cout << "acc-name: co-Buchi" << std::endl;
+    std::cout << "Acceptance: 1 Fin(0)" << std::endl;
+    std::cout << "AP: " << predicates;
     for (int i = 0; i < predicates; ++i) {
-      cout << " \"" << sym_table[i] << "\"";
+      std::cout << " \"" << sym_table[i] << "\"";
     }
-    cout << endl;
-    cout << "properties: trans-labels explicit-labels state-acc univ-branch very-weak" << endl;
+    std::cout << std::endl;
+    std::cout << "properties: trans-labels explicit-labels state-acc univ-branch very-weak" << std::endl;
   } else {
-      cout << "acc-name: none" << endl;
-      cout << "Acceptance: 0 f" << endl;
+      std::cout << "acc-name: none" << std::endl;
+      std::cout << "Acceptance: 0 f" << std::endl;
     }
 }
 
-void print_alternating_hoaf(std::string name = ""){
-  map<cset, ATrans*>::iterator t;
-  map<int, int> astate2Int;
+void print_alternating_hoaf(const std::string& name = "VWAA for "){
+  std::map<cset, ATrans*>::iterator t;
+  std::map<int, int> astate2Int;
   bool true_state = false;
 
   astate_count = 0;
@@ -854,7 +851,7 @@ void print_alternating_hoaf(std::string name = ""){
 void print_alternating() /* dumps the alternating automaton */
 {
   int i;
-  map<cset, ATrans*>::iterator t;
+  std::map<cset, ATrans*>::iterator t;
 
   fprintf(tl_out, "init :\n");
   if (transition[0])
@@ -890,7 +887,7 @@ void print_alternating() /* dumps the alternating automaton */
 }
 
 void predecessors_sets_explore_node(int node, int* pred_set) {
-  map<cset, ATrans*>::iterator t;
+  std::map<cset, ATrans*>::iterator t;
   int i, j, mod = 8 * sizeof(int);
 
   merge_sets(predecessors[node], pred_set, 0);
@@ -914,7 +911,7 @@ void predecessors_sets_explore_node(int node, int* pred_set) {
 }
 
 void count_predecessors_sets() {
-  map<cset, ATrans*>::iterator t;
+  std::map<cset, ATrans*>::iterator t;
   int i, *pred_set;
 
   for(i=0; i<node_id; i++)
@@ -940,13 +937,13 @@ void print_predecessors_sets() {
 
 // TODO: Nepocitaj pary <may,must> ale iba must
 
-typedef pair<cset, cset> t_cset_pair;
-typedef pair<set<cset>, set<cset> > t_mm_pair;
-t_mm_pair cout_Z_explore_node(int node, bool is_must);
+typedef std::pair<cset, cset> t_cset_pair;
+typedef std::pair<std::set<cset>, std::set<cset> > t_mm_pair;
+t_mm_pair count_Z_explore_node(int node, bool is_must);
 
-set<cset> combine_sets(set<cset>& s1, set<cset>& s2) {
-  set<cset>::iterator s_i, s_j;
-  set<cset> s;
+std::set<cset> combine_sets(std::set<cset>& s1, std::set<cset>& s2) {
+  std::set<cset>::iterator s_i, s_j;
+  std::set<cset> s;
   cset cs;
   
   if(s1.empty())
@@ -968,7 +965,7 @@ t_mm_pair combine_trans(const cset &to, int node, bool is_must) {
   int i;
   int *list = to.to_list();
   t_mm_pair mm;
-  set<cset> may, must;
+  std::set<cset> may, must;
   if (is_must) {
     must.insert(cset(node, 0));
   } else {
@@ -980,7 +977,7 @@ t_mm_pair combine_trans(const cset &to, int node, bool is_must) {
   
   for (i = 1; i < list[0]; i++) {
     if (list[i] == node) continue; // loop
-    mm = cout_Z_explore_node(list[i], is_must);
+    mm = count_Z_explore_node(list[i], is_must);
     if (!is_must)
       may = combine_sets(may, mm.first);
     must = combine_sets(must, mm.second);
@@ -991,16 +988,16 @@ t_mm_pair combine_trans(const cset &to, int node, bool is_must) {
   return make_pair(may, must);
 }
 
-int is_looping(int node_from, const cset to) {
+int is_looping(int node_from, const cset& to) {
     return to.is_elem(node_from);
 }
 
-t_mm_pair cout_Z_explore_node(int node, bool is_must) {
-  map<cset, ATrans*>::iterator t;
+t_mm_pair count_Z_explore_node(int node, bool is_must) {
+  std::map<cset, ATrans*>::iterator t;
   Node *n = label[node];
-  set<cset> must, may;
+  std::set<cset> must, may;
   t_mm_pair mm;
-  set<cset> escapes; // I need this for Untils
+  std::set<cset> escapes; // I need this for Untils
   int i;
 
   if (transition[node])
@@ -1089,69 +1086,70 @@ t_mm_pair cout_Z_explore_node(int node, bool is_must) {
     }
 
     if (n->ntyp == U_OPER && !is_F(n)) {
-      set<cset>::iterator t;
+      std::set<cset>::iterator t;
       for (t = escapes.begin(); t != escapes.end(); t++) {
           //DEBUG
-          //cout << "escape:";
+          //std::cout << "escape:";
           //t->print();
-          //cout << endl;
+          //std::cout << std::endl;
           //DEBUG END
-        set<cset> looping_may = set<cset>(may);
-        set<cset> looping_must = set<cset>(must);
+        std::set<cset> looping_may = std::set<cset>(may);
+        std::set<cset> looping_must = std::set<cset>(must);
         //looping_may.insert(cset());
         //looping_must.insert(cset());
 
 
 
         // DEBUG
-        //set<cset>::iterator j;
-        //cout << "looping:" << endl;
+        //std::set<cset>::iterator j;
+        //std::cout << "looping:" << std::endl;
         //for (j=looping_must.begin();j!=looping_must.end();j++) {
         //    j->print();
         //}
-        //cout << endl;
+        //std::cout << std::endl;
         //END DEBUG
 
         //may.clear();
         //must.clear();
 
 
-//        set<cset>::iterator s_i;
-//        cout << "Escapes:\n";
+//        std::set<cset>::iterator s_i;
+//        std::cout << "Escapes:\n";
 //        for (s_i = escapes.begin(); s_i != escapes.end(); s_i++) {
 //          if (s_i != escapes.begin())
-//            cout << ", ";
-//          s_i->print_and_mark(cout, final_set);
+//            std::cout << ", ";
+//          s_i->print_and_mark(std::cout, final_set);
 //        }
 
         //Here I want to combine each escape trans with every combination (and empty one) of loopings
         mm = combine_trans(*t, node, is_must);
         if (!is_must) {
-          set<cset> new_may = combine_sets(looping_may, mm.first);
+          std::set<cset> new_may = combine_sets(looping_may, mm.first);
           may.insert(new_may.begin(),new_may.end());
         }
-        set<cset> new_must = combine_sets(looping_must, mm.second);
+        std::set<cset> new_must = combine_sets(looping_must, mm.second);
         must.insert(new_must.begin(),new_must.end());
       }
     }
     return make_pair(may, must);
 }
 
-set<cset> compute_Z_set() {
-  map<cset, ATrans*>::iterator t;
-  set<cset>::iterator s_i;
-  set<cset> Z;
+std::set<cset> compute_Z_set() {
+  std::map<cset, ATrans*>::iterator t;
+  std::set<cset>::iterator s_i;
+  std::set<cset> Z;
   int i, *list;
 
   if (transition[0])
     for(t = transition[0]->begin(); t != transition[0]->end(); t++) {
-      set<cset> must;
+
+      std::set<cset> must;
       must.insert(cset());
 
       // list of target states of the transition
       list = t->first.to_list();
       for (i = 1; i < list[0]; i++) {
-        t_mm_pair mm = cout_Z_explore_node(list[i], false);
+        t_mm_pair mm = count_Z_explore_node(list[i], false);
         must = combine_sets(must, mm.second);
       }
       
@@ -1167,8 +1165,8 @@ set<cset> compute_Z_set() {
 void oteckuj(int nodes_num) {
   int i, ii, jj, node, mod = 8 * sizeof(int);
   Node *n;
-  map<cset, ATrans*>::iterator t;
-  Queue *q = create_queue(nodes_num);
+  std::map<cset, ATrans*>::iterator t;
+  std::queue<int> q;
   int *in_queue = make_set(-1, 0);
   
   /* Add initial states to queue*/
@@ -1179,15 +1177,16 @@ void oteckuj(int nodes_num) {
           if((t->first.get_set())[ii] & (1 << jj)) {
             if(!in_set(in_queue, (mod * ii + jj))) {
             	add_set(in_queue, (mod * ii + jj));
-	            push(q, (mod * ii + jj));
+	            q.push(mod * ii + jj);
             }
           }
         }
       }
     }
   
-  while (!::is_empty(q)) {
-    node = pop(q);
+  while (!q.empty()) {
+    node = q.front();
+    q.pop();
     rem_set(in_queue, node);
     n = label[node];
 
@@ -1204,7 +1203,7 @@ void oteckuj(int nodes_num) {
                     add_set(tecky, (mod * ii + jj));
                     if(!in_set(in_queue, (mod * ii + jj))) {
                       add_set(in_queue, (mod * ii + jj));
-                      push(q, (mod * ii + jj));
+                      q.push(mod * ii + jj);
                     }
                   }
                 }
@@ -1234,7 +1233,7 @@ void oteckuj(int nodes_num) {
                   }
                   if(!in_set(in_queue, (mod * ii + jj))) {
                     add_set(in_queue, (mod * ii + jj));
-                    push(q, (mod * ii + jj));
+                    q.push(mod * ii + jj);
                   }
                 }
               }
@@ -1249,7 +1248,6 @@ void oteckuj(int nodes_num) {
       }
   }
 
-  free_queue(q);
   tfree(in_queue);
 }
 
@@ -1262,7 +1260,7 @@ void mk_alternating(Node *p) /* generates an alternating automaton for p */
 
   node_size = calculate_node_size(p) + 1; /* number of states in the automaton */
   label = (Node **) tl_emalloc(node_size * sizeof(Node *));
-  transition = (map<cset, ATrans*> **) tl_emalloc(node_size * sizeof(map<cset, ATrans*> *));
+  transition = (std::map<cset, ATrans*> **) tl_emalloc(node_size * sizeof(std::map<cset, ATrans*> *));
   predecessors = (int **) tl_emalloc(node_size * sizeof(int *));
   nodes_num = node_size;
   node_size = node_size / (8 * sizeof(int)) + 1;
@@ -1294,10 +1292,10 @@ void mk_alternating(Node *p) /* generates an alternating automaton for p */
     transition[0] = boolean(p); /* generates the alternating automaton */
   } else {
     build_alternating(p); /* generates the alternating automaton */
-    transition[0] = new map<cset, ATrans*>();
+    transition[0] = new std::map<cset, ATrans*>();
     ATrans *t = emalloc_atrans();
     t->label = bdd_true();
-    transition[0]->insert(pair<cset, ATrans*>(cset(already_done(p), 0), t));
+    transition[0]->insert(std::pair<cset, ATrans*>(cset(already_done(p), 0), t));
   }
 
   // Replace the estimation of the number of predicates with the exact value.

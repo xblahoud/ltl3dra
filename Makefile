@@ -63,7 +63,7 @@ CXX=g++
 CPPFLAGS= -O3 -DNXT -I$(BUDDY_INCLUDE)
 
 LTL3DRA=	parse.o lex.o main.o trans.o buchi.o cset.o set.o dra.o ra.o\
-	mem.o rewrt.o cache.o alternating.o generalized.o optim.o queue.o
+	mem.o rewrt.o cache.o alternating.o generalized.o optim.o
 
 all: ltl3dra
 

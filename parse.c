@@ -284,6 +284,7 @@ bin_simpler(Node *ptr)
 		}
 		ptr = tl_nn(OR, Not(ptr->lft), ptr->rgt);
 		ptr = rewrite(ptr);
+		ptr = bin_simpler(ptr);
 		break;
 	case EQUIV:
 		if (implies(ptr->lft, ptr->rgt) &&
@@ -299,6 +300,7 @@ bin_simpler(Node *ptr)
 			Not(ptr->rgt)));
 		ptr = tl_nn(OR, a, b);
 		ptr = rewrite(ptr);
+		ptr = bin_simpler(ptr);
 		break;
 	case AND:
 		/* p && (q U p) = p */
@@ -1012,6 +1014,37 @@ static Node* determ(Node *ptr) {
   return ptr;
 }
 
+static Node* recursive_bin_simpler(Node *ptr) {
+	Node *l, *r;
+
+	if (ptr)
+	switch(ptr->ntyp) {
+	case V_OPER:
+	case OR:
+	case AND:
+	case U_OPER:
+	  ptr->lft = recursive_bin_simpler(ptr->lft);
+	  ptr->rgt = recursive_bin_simpler(ptr->rgt);
+	  break;
+#ifdef NXT
+	case NEXT:
+#endif
+	case NOT:
+	  ptr->lft = recursive_bin_simpler(ptr->lft);
+	  break;
+	case FALSE:
+	case TRUE:
+	case PREDICATE:
+	  break;
+	default:
+	  printf("Unknown token: ");
+	  tl_explain(ptr->ntyp);
+	  break;
+	}
+
+	return bin_simpler(ptr);
+}
+
 void
 tl_parse(void)
 {       Node *n = tl_formula();
@@ -1025,7 +1058,7 @@ tl_parse(void)
 	  bool changed = false;
 	  n = rewrite_V(n, changed);
 	  if (tl_simp_log && changed)
-	    n = bin_simpler(n);
+	    n = recursive_bin_simpler(n);
 	}
 /*	n = remove_V(n);*/
 /*	n = bin_simpler(n);*/
@@ -1033,6 +1066,7 @@ tl_parse(void)
   	n = determ(n);
   	n = bin_simpler(n);
 	}*/
+
 
 	if (!is_limLTL(n)) {
         std::cerr << "The LTL formula is not contained in the LTL/GUX fragment so it may be incorrect.\n";

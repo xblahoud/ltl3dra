@@ -4,7 +4,6 @@
 #include <set>
 #include <vector>
 
-using namespace std;
 namespace dra {
 
 class RAtrans;
@@ -15,18 +14,18 @@ class RAstate {
   public:  
     int id;
     int incoming;
-    vector<int> levels;
+    std::vector<int> levels;
     DRAstate* d_state;
     RAstate* sub;
     
     std::map<RAstate*, RAtrans>* trans;
     
-    RAstate(int id, int size, DRAstate* ds) { this->id = id; trans = new map<RAstate*, RAtrans>();
-                                              levels = vector<int>(size, 0); d_state = ds; this->incoming = 0; }
-    RAstate(int id, vector<int>& l, DRAstate* ds) { this->id = id; trans = new map<RAstate*, RAtrans>();
+    RAstate(int id, int size, DRAstate* ds) { this->id = id; trans = new std::map<RAstate*, RAtrans>();
+                                              levels = std::vector<int>(size, 0); d_state = ds; this->incoming = 0; }
+    RAstate(int id, std::vector<int>& l, DRAstate* ds) { this->id = id; trans = new std::map<RAstate*, RAtrans>();
                                                     levels = l; d_state = ds; this->incoming = 0;}
     RAstate(const RAstate &r) { this->id = r.id; this->levels = r.levels; this->d_state = r.d_state;
-                                if (r.trans) this->trans = new map<RAstate*, RAtrans>(*r.trans);
+                                if (r.trans) this->trans = new std::map<RAstate*, RAtrans>(*r.trans);
                                 this->incoming = r.incoming;}
     ~RAstate() { if (trans) delete trans; }
     
@@ -67,5 +66,9 @@ class RAtrans {
     
     void insert_label(bdd l) { label |= l; }
 };
+
+// Declare all stream operators in dra namespace.
+std::ostream& operator<<(std::ostream &out, const RAstate &r);
+std::ostream& operator<<(std::ostream &out, const RAtrans &t);
 
 }

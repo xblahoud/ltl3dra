@@ -8,6 +8,9 @@
 #include <assert.h>
 
 cset& cset::operator=(const cset &r) {
+  if (&r == this)
+    return (*this);
+
   if (type == r.type) {
     copy_set(r.s, s, type);
   } else {
