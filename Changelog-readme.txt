@@ -1,4 +1,5 @@
 version 0.2.4 (2017-01-15):
+  -- compile error solved
   -- bugs introduced by 0.2.3 fixed. 
   Thanks Tomas Babiak and Alexandre Duret-Lutz for reporting them.
 

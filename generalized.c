@@ -1105,8 +1105,8 @@ void print_generalized_hoaf_header(int states,
     for(int i = 0; i < init_states; i++)
       if(init[i])
       fprintf(tl_out, "Start: %d\n", gstate2Int.find(init[i])->second);
-    fprintf(tl_out, "acc-name: generalized-Buchi %u\n", final2Int.size());
-    fprintf(tl_out, "Acceptance: %u", final2Int.size());
+    fprintf(tl_out, "acc-name: generalized-Buchi %lu\n", final2Int.size());
+    fprintf(tl_out, "Acceptance: %lu", final2Int.size());
     if (final2Int.size() > 0) {
       for(std::map<int, int>::const_iterator i = final2Int.begin(); i != final2Int.end(); i++) {
         if (i != final2Int.begin())
