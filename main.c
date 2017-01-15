@@ -64,12 +64,12 @@ int tl_f_components = 1; /* use direct building of final TGBA components corresp
 int tl_rem_scc   = 1; /* enable removing non-accepting strongly connected components */
 int tl_alt       = 1; /* use suspension for VWAA construction */
 int tl_rew_f     = 1; /* rewrite R formulae with alternating subformulae */
-int tl_det_m     = 1; /* construct more deterministic automaton (default) */
+int tl_det_m     = 0; /* construct more deterministic automaton */
 int tl_determinize  = 0; /* old (not so efficient) determinization */
 int tl_bisim     = 0; /* enable basic bisimulatin reduction of BA */
 int tl_bisim_r   = 0; /* enable basic bisimulatin reduction of BA and repeat until there is no reduction */
 int tl_sim       = 0; /* enable strong fair simulation reduction of BA */
-int tl_sim_r     = 1; /* enable strong fair simulation reduction of BA and repeat until there is no reduction (default) */
+int tl_sim_r     = 0; /* enable strong fair simulation reduction of BA and repeat until there is no reduction */
 int tl_ltl3ba    = 1; /* enable some LTL3BA specific improvements */
 int tl_spot_out  = 0; /* enable output in SPOT format */
 int tl_hoaf      = 2; /* enable output in HOA format */
@@ -208,7 +208,7 @@ tl_main(std::string &argv)
 void
 unknown_option(const char* str)
 {
-  printf("ltl3ba: unknown option -- %s\n\n", str);
+  printf("ltl3dra: unknown option -- %s\n\n", str);
   usage(1);
 }
 
@@ -287,7 +287,7 @@ main(int argc, char *argv[])
                 {
                         std::ifstream in_file(ltl_file.c_str(), std::ifstream::in);
                         if (!in_file.is_open())
-                        {       printf("ltl3ba: cannot open %s\n", ltl_file.c_str());
+                        {       printf("ltl3dra: cannot open %s\n", ltl_file.c_str());
                                 alldone(1);
                         }
                         std::getline(in_file, add_ltl);

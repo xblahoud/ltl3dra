@@ -1,3 +1,7 @@
+version 0.2.4 (2017-01-15):
+  -- bugs introduced by 0.2.3 fixed. 
+  Thanks Tomas Babiak and Alexandre Duret-Lutz for reporting them.
+
 version 0.2.3 (2016-09-13):
   -- compile issues in g++ 6.1 plus fixed. Thanks Alexadre Duret-Lutz for
              poiting them out and suggesting the fixes.
