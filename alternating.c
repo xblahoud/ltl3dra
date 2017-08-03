@@ -127,7 +127,7 @@ ATrans *dup_trans(ATrans *trans)  /* returns the copy of a transition */
   return result;
 }
 
-void do_merge_trans(ATrans **result, ATrans *trans1, ATrans *trans2) 
+void do_merge_trans(ATrans **result, ATrans *trans1, ATrans *trans2)
 { /* merges two transitions */
   if(!trans1 || !trans2) {
     free_atrans(*result, 0);
@@ -153,8 +153,8 @@ ATrans *merge_trans(ATrans *trans1, ATrans *trans2) /* merges two transitions */
 int already_done(Node *p) /* finds the id of the node, if already explored */
 {
   int i;
-  for(i = 1; i<node_id; i++) 
-    if (isequal(p, label[i])) 
+  for(i = 1; i<node_id; i++)
+    if (isequal(p, label[i]))
       return i;
   return -1;
 }
@@ -162,8 +162,8 @@ int already_done(Node *p) /* finds the id of the node, if already explored */
 int get_sym_id(char *s) /* finds the id of a predicate, or atttributes one */
 {
   int i;
-  for(i=0; i<sym_id; i++) 
-    if (!strcmp(s, sym_table[i])) 
+  for(i=0; i<sym_id; i++)
+    if (!strcmp(s, sym_table[i]))
       return i;
   sym_table[sym_id] = s;
   return sym_id++;
@@ -351,7 +351,7 @@ std::map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating aut
         ATrans *tmp = dup_trans(t2->second); /* q */
         add_trans(result, cset(t2->first), tmp);
       }
-    
+
     lft = build_alternating(p->lft);
     node = already_done(p->lft);
     /* Modified construction on && p is alternating */
@@ -406,7 +406,7 @@ std::map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating aut
         is_Gs = make_set(-1, 0);
         is_UG = make_set(-1, 0);
       }
-    
+
       add_set(is_UG, node_id);
       UG_succ[node_id - 1] = already_done(p->rgt);
       add_set(is_Gs, UG_succ[node_id - 1]);
@@ -473,7 +473,7 @@ std::map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating aut
           tmp = dup_trans(t1->second);  /* q */
 /*          to = t1->first;
           to.insert(node);  /* Xp && q */
-/*          result->insert(std::pair<cset, ATrans*>(to, tmp));  
+/*          result->insert(std::pair<cset, ATrans*>(to, tmp));
         }*/
 
       tmp = dup_trans(t1->second);  /* q */
@@ -496,7 +496,7 @@ std::map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating aut
   case AND:
     lft = build_alternating(p->lft);
     rgt = build_alternating(p->rgt);
-    if (tl_alt && (p->lft->ntyp == V_OPER || p->lft->ntyp == U_OPER) && 
+    if (tl_alt && (p->lft->ntyp == V_OPER || p->lft->ntyp == U_OPER) &&
         is_INFp(p->lft)) {
       lft = new std::map<cset, ATrans*>();
       t = emalloc_atrans();
@@ -535,7 +535,7 @@ std::map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating aut
     result = new std::map<cset, ATrans*>();
     lft = build_alternating(p->lft);
     rgt = build_alternating(p->rgt);
-    if (tl_alt && (p->lft->ntyp == V_OPER || p->lft->ntyp == U_OPER) && 
+    if (tl_alt && (p->lft->ntyp == V_OPER || p->lft->ntyp == U_OPER) &&
         is_INFp(p->lft)) {
       lft = new std::map<cset, ATrans*>();
       t = emalloc_atrans();
@@ -606,13 +606,13 @@ std::map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating aut
     break;
   }
 
-  if (tl_det_m) {   
+  if (tl_det_m) {
     if(result)
       for(t1 = result->begin(); t1 != result->end(); t1++) {
         for(t2 = result->begin(); t2 != result->end(); ) {
           if (t1 != t2 && included_set(t1->first.get_set(), t2->first.get_set(), 0)) {
             t2->second->label &= ! t1->second->label;
-            
+
             if (t2->second->label == bdd_false()) {
               std::map<cset, ATrans*>::iterator tx = t2++;
               free_atrans(tx->second, 0);
@@ -623,7 +623,7 @@ std::map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating aut
           } else {
             t2++;
           }
-          
+
         }
       }
   }
@@ -704,12 +704,12 @@ int print_or;
 void allsatPrintHandler(char* varset, int size)
 {
   int print_and = 0;
-  
+
   if (print_or) fprintf(tl_out, " || ");
   fprintf(tl_out, "(");
   for (int v=0; v<size; v++)
   {
-    if (varset[v] < 0) continue;       
+    if (varset[v] < 0) continue;
     if (print_and) fprintf(tl_out, " && ");
     if (varset[v] == 0)
       fprintf(tl_out, "!%s", sym_table[v]);
@@ -724,12 +724,12 @@ void allsatPrintHandler(char* varset, int size)
 void allsatPrintHandler_hoaf(char* varset, int size)
 {
   int print_and = 0;
-  
+
   if (print_or) fprintf(tl_out, " | ");
   fprintf(tl_out, "(");
   for (int v=0; v<size; v++)
   {
-    if (varset[v] < 0) continue;       
+    if (varset[v] < 0) continue;
     if (print_and) fprintf(tl_out, " & ");
     if (varset[v] == 0)
       fprintf(tl_out, "!%d", v);
@@ -759,6 +759,7 @@ void print_alternating_hoaf_state(const cset& set,
 
 void print_alternating_hoaf_header(int states,
                                    const std::map<int, int>& astate2Int,
+                                   bool univ_branch,
                                    const std::string& name = "VWAA for ") {
   std::cout << "HOA: v1" << std::endl;
   std::cout << "tool: \"ltl3dra\" \"" << VERSION_NUM << "\"" << std::endl;
@@ -780,7 +781,10 @@ void print_alternating_hoaf_header(int states,
       std::cout << " \"" << sym_table[i] << "\"";
     }
     std::cout << std::endl;
-    std::cout << "properties: trans-labels explicit-labels state-acc univ-branch very-weak" << std::endl;
+    std::cout << "properties: trans-labels explicit-labels state-acc very-weak";
+    if (univ_branch)
+      std::cout << " univ-branch";
+    std::cout << std::endl;
   } else {
       std::cout << "acc-name: none" << std::endl;
       std::cout << "Acceptance: 0 f" << std::endl;
@@ -791,6 +795,7 @@ void print_alternating_hoaf(const std::string& name = "VWAA for "){
   std::map<cset, ATrans*>::iterator t;
   std::map<int, int> astate2Int;
   bool true_state = false;
+  bool univ_branch = false;
 
   astate_count = 0;
   for(int i = node_id - 1; i > 0; i--) {
@@ -801,18 +806,22 @@ void print_alternating_hoaf(const std::string& name = "VWAA for "){
         for(t = transition[i]->begin(); t != transition[i]->end(); t++) {
           if (t->first.empty())
             true_state = true;
+          // Check if there is some universal branching
+          int *list = t->first.to_list();
+            if (list[0] > 1)
+              univ_branch = true;
         }
       }
     }
   }
-  
+
   if (true_state)
     astate_count++;
 
   if (name != "") {
-      print_alternating_hoaf_header(astate_count, astate2Int, name);
+      print_alternating_hoaf_header(astate_count, astate2Int, univ_branch, name);
   } else {
-  print_alternating_hoaf_header(astate_count, astate2Int);
+  print_alternating_hoaf_header(astate_count, astate2Int, univ_branch);
   }
 
   fprintf(tl_out, "--BODY--\n");
@@ -840,7 +849,7 @@ void print_alternating_hoaf(const std::string& name = "VWAA for "){
         fprintf(tl_out, "\n");
       }
   }
-  
+
   if (true_state) {
     fprintf(tl_out, "State: %d \"t\"\n [t] %d\n", astate_count-1, astate_count-1);
   }
@@ -859,7 +868,7 @@ void print_alternating() /* dumps the alternating automaton */
       t->first.print();
       fprintf(tl_out, "\n");
     }
-  
+
   for(i = node_id - 1; i > 0; i--) {
     if(!label[i])
       continue;
@@ -893,7 +902,7 @@ void predecessors_sets_explore_node(int node, int* pred_set) {
   merge_sets(predecessors[node], pred_set, 0);
   int* new_pred_set = dup_set(predecessors[node], 0);
   add_set(new_pred_set, node);
-  
+
   if (transition[node])
     for(t = transition[node]->begin(); t != transition[node]->end(); t++) {
       for(i = 0; i < node_size; i++) {
@@ -924,9 +933,9 @@ void count_predecessors_sets() {
 
 void print_predecessors_sets() {
   int i;
-  
+
   fprintf(tl_out, "\nPredecessors sets:\n");
-	
+
   for (i = node_id - 1; i > 0; i--) {
     fprintf(tl_out, "%i -> ", i);
     print_set(predecessors[i], 0);
@@ -945,19 +954,19 @@ std::set<cset> combine_sets(std::set<cset>& s1, std::set<cset>& s2) {
   std::set<cset>::iterator s_i, s_j;
   std::set<cset> s;
   cset cs;
-  
+
   if(s1.empty())
     return s2;
   if(s2.empty())
     return s1;
-  
+
   for (s_i = s1.begin(); s_i != s1.end(); s_i++) {
     for (s_j = s2.begin(); s_j != s2.end(); s_j++) {
       cs.merge(*s_i, *s_j);
       s.insert(cs);
     }
   }
-  
+
   return s;
 }
 
@@ -974,7 +983,7 @@ t_mm_pair combine_trans(const cset &to, int node, bool is_must) {
 
   //if ((cset(node,0) == to) && in_set(final_set,node))
   // podminka, ktera urci self loopy na may stavech
-  
+
   for (i = 1; i < list[0]; i++) {
     if (list[i] == node) continue; // loop
     mm = count_Z_explore_node(list[i], is_must);
@@ -982,7 +991,7 @@ t_mm_pair combine_trans(const cset &to, int node, bool is_must) {
       may = combine_sets(may, mm.first);
     must = combine_sets(must, mm.second);
   }
-  
+
   tfree(list);
 
   return make_pair(may, must);
@@ -1152,13 +1161,13 @@ std::set<cset> compute_Z_set() {
         t_mm_pair mm = count_Z_explore_node(list[i], false);
         must = combine_sets(must, mm.second);
       }
-      
+
       Z.insert(must.begin(), must.end());
-      
+
       if (list)
         tfree(list);
     }
-    
+
   return Z;
 }
 
@@ -1168,7 +1177,7 @@ void oteckuj(int nodes_num) {
   std::map<cset, ATrans*>::iterator t;
   std::queue<int> q;
   int *in_queue = make_set(-1, 0);
-  
+
   /* Add initial states to queue*/
   if (transition[0])
     for(t = transition[0]->begin(); t != transition[0]->end(); t++) {
@@ -1183,7 +1192,7 @@ void oteckuj(int nodes_num) {
         }
       }
     }
-  
+
   while (!q.empty()) {
     node = q.front();
     q.pop();
@@ -1286,7 +1295,7 @@ void mk_alternating(Node *p) /* generates an alternating automaton for p */
     bdd_setvarnum(predicates);
   else
     bdd_setvarnum(2);
-  
+
   final_set = make_set(-1, 0);
   if (!tl_determinize && !tl_det_m && tl_spot_out != 2) {
     transition[0] = boolean(p); /* generates the alternating automaton */
@@ -1337,10 +1346,10 @@ void mk_alternating(Node *p) /* generates an alternating automaton for p */
     printf("%d,", UG_pred[i]);
   }
   printf("\n");*/
- 
+
   if(tl_dra_out)
     Z_set = compute_Z_set();
-    
+
   if (tl_hoaf == 1) {
     print_alternating_hoaf();
   }

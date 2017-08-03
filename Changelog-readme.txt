@@ -1,3 +1,9 @@
+version 0.2.5 (2017-08-03):
+  -- bug fixes: 
+    -- incorrect issue of univ-branch propoerty in HOA output of VWAA
+	-- it was incorrectly claimed that BA were created by ltl3ba
+  Thanks Alexandre Duret-Lutz for reporting the bugs.
+
 version 0.2.4 (2017-01-15):
   -- compile error solved
   -- bugs introduced by 0.2.3 fixed. 

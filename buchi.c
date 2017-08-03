@@ -1051,7 +1051,7 @@ void print_ba_hoaf_header(int states,
                           int init_state,
                           const std::string& name) {
   fprintf(tl_out, "HOA: v1\n");
-  fprintf(tl_out, "tool: \"ltl3ba\" \"%s\"\n", VERSION_NUM);
+  fprintf(tl_out, "tool: \"ltl3dra\" \"%s\"\n", VERSION_NUM);
   fprintf(tl_out, "name: \"%s for ", name.c_str());
   put_uform();
   fprintf(tl_out, "\"\n");
