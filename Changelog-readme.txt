@@ -1,3 +1,7 @@
+version 0.2.6 (2017-12-20):
+  -- new features:
+    -- provides possibility to check whether formula is from LTL-GUX (-C)
+
 version 0.2.5 (2017-08-03):
   -- bug fixes: 
     -- incorrect issue of univ-branch propoerty in HOA output of VWAA

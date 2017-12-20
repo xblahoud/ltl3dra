@@ -83,6 +83,7 @@ int tl_dra_goal  = 0; /* Writes goal output into given file */
 int tl_dra_stats = 0; /* Prints only statistics about TGDRA and DRA */
 int tl_dra_ltl2dstar = 0;
 int tl_dra_force = 0; /* Forces LTL3DRA to produce an automaton even for formula outside LTL\GUX */
+int tl_dra_check_only = 0;
 #endif
 int tl_errs      = 0;
 int tl_verbose   = 0;
@@ -148,6 +149,7 @@ usage(int estatus)
         printf("formula stored in a 1-line file\n");
         printf("\t\t  (use '-F -' to read the formula from stdin\n");
         printf(" -A\t\tbuild an automaton even for formula outside LTL-GUX\n");
+        printf(" -C\t\tcheck whether formula is from LTL-GUX and exit\n");
         printf("\n Output options:\n");
         printf(" -d\t\tdisplay automata (D)escription at each step (VWAA, TGDRA, and DRA)\n\t\t  in the original LTL3DRA 0.1 format, and DRA in ltl2dstar format\n");
 		printf(" -dH\t\tlike -d but automata are printed in HOA format\n");
@@ -223,7 +225,8 @@ main(int argc, char *argv[])
                           argc--; argv++; break;
                 case 'f': if (*(argv+2)) add_ltl = *(argv+2);
                           argc--; argv++; break;
-                case 'A': tl_dra_force = 1;
+                case 'A': tl_dra_force = 1; break;
+                case 'C': tl_dra_check_only = 1; break;
 //                case 'a': tl_fjtofj = 0; break;
 //                case 'c': tl_simp_scc = 0; tl_rem_scc = 0; break;
 //                case 'o': tl_simp_fly = 0; break;
