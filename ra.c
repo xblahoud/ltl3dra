@@ -265,7 +265,7 @@ void retarget_all_ratrans() {
 
 void simplify_rastates() {
   bool removed = false;
-  std::set<RAstate*, DRAstateComp>::iterator s_i, s_j, s_temp;
+  std::set<RAstate*, RAstateComp>::iterator s_i, s_j, s_temp;
 
   do {
     for(s_i = rastates.begin(); s_i != rastates.end(); s_i++) {
