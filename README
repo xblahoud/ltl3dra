@@ -77,22 +77,29 @@ Here are the files that contain some code from Spin v3.4.1 :
 
 LTL3DRA needs BuDDy (Binary Decision Diagram) library.
 BuDDy is available at http://sourceforge.net/projects/buddy/
-LTL3DRA was tested with BuDDy version 2.4
+LTL3DRA was tested with BuDDy version 2.4. You can use the
+script install_buddy.sh or the followint command to install
+BuDDy system-wide.
+> make install_buddy
 
 3. COMPILING
 
 open the archive :
-> gunzip ltl3dra-0.1.tar.gz
-> tar xf ltl3dra-0.1.tar
-> cd ltl3dra-0.1
+> tar -xvf ltl3dra-0.2.6.tar.gz
+> cd ltl3dra-0.2.6
 
-Edit Makefile and set paths to BuDDy's files "bdd.h" and "libbdd.a".
+If you did not install BuDDy system-wide, you should edit  Makefile
+and set paths to BuDDy's files "bdd.h" and "libbdd.a". You should
+also include BUDDY_LIB into your LD_PATH
 (Edit BUDDY_INCLUDE and BUDDY_LIB)
 
 compile the program
 > make
 
-3. EXECUTING
+You can install into the default locations using
+> make install
+
+4. EXECUTING
 
 run the program
 > ./ltl3dra -f "formula"
@@ -130,7 +137,7 @@ run the command
 > ./ltl3dra
 to see the possible options for executing the program
 
-4. TGDRA3DOT & TGDRA
+5. TGDRA3DOT & TGDRA
 Since version 0.2 LTL3DRA comes with tgdra3dot and tgdra utilities.
     tgdra3dot  - a perl utility that parses a output of
                  > ltl3dra -d -f "formula" command and produces a .dot
@@ -143,6 +150,6 @@ Since version 0.2 LTL3DRA comes with tgdra3dot and tgdra utilities.
           - USAGE
             > tgdra -f "GFa"
 
-5. BUGS
+6. BUGS
 
 Please send bug-reports to xblahoud@fi.muni.cz

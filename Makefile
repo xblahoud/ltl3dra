@@ -44,23 +44,14 @@ BUDDY_INCLUDE=../buddy/src/
 # Set PATH to "libbdd.a" BuDDy file.
 BUDDY_LIB=../buddy/src/.libs/
 
-# to obtain BuDDy run:
-# $ cd some_directory
-# $ wget https://downloads.sourceforge.net/project/buddy/buddy/BuDDy%202.4/buddy-2.4.tar.gz
-# $ tar xzf buddy-2.4.tar.gz
-# $ cd buddy-2.4
-# $ ./configure
-# $ make
-# then set  
-# BUDDY_INCLUDE=some_directory/buddy-2.4/src/
-# BUDDY_LIB=some_directory/buddy-2.4/src/.libs/
-# or run 
-# $ make install 
-# and use the default values of BUDDY_INCLUDE and BUDDY_LIB.
+# to obtain BuDDy you can run (with admin privileges):
+# $ make install_buddy
+# which installs buddy into the default locations and
+# then you do not need to set the variables at all.
 
 CC=g++
 CXX=g++
-CPPFLAGS= -O3 -DNXT -I$(BUDDY_INCLUDE)
+CPPFLAGS=-O3 -DNXT -I$(BUDDY_INCLUDE)
 
 LTL3DRA=	parse.o lex.o main.o trans.o buchi.o cset.o set.o dra.o ra.o\
 	mem.o rewrt.o cache.o alternating.o generalized.o optim.o
@@ -74,3 +65,11 @@ $(LTL3DRA): ltl3dra.h dra.h ra.h
 
 clean:
 	rm -f ltl3dra *.o
+
+# Makes ltl3dra available on your computer. Need administrative priviliges
+install: ltl3dra
+	cp ltl3dra /usr/local/bin
+	cp LICENSE README /usr/local/share/doc/ltl3dra
+
+install_buddy:
+	bash install_buddy.sh
