@@ -1,3 +1,13 @@
+version 0.2.7 (2018-11-11):
+  -- bux fixed:
+    -- wrong type in ra.c caused compiling issues in new versions of GCC.
+       Thanks ADL for reporting this bug
+  -- functunality removed:
+    -- removed the tools tgdra tgdra3dot
+  -- installation process:
+    -- `make install_buddy` installs buddy into the system
+    -- `make install` now copies ltl3dra into /usr/local/bin
+
 version 0.2.6 (2017-12-20):
   -- new features:
     -- provides possibility to check whether formula is from LTL-GUX (-C)
