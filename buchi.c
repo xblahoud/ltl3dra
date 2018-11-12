@@ -108,7 +108,7 @@ BState *remove_bstate(BState *s, BState *s1) /* removes a state */
     if(s1->prv == s)
       s1->prv = s->prv;
   return prv;
-} 
+}
 
 void retarget_all_btrans()
 {             /* redirects transitions before removing a state from the automaton */
@@ -145,16 +145,16 @@ int all_btrans_match(BState *a, BState *b) /* decides if the states are equivale
   std::map<BState*, bdd>::iterator s, t;
   bdd loop_a, loop_b;
   if (((a->final == accept) || (b->final == accept)) &&
-      (a->final + b->final != 2 * accept) && 
+      (a->final + b->final != 2 * accept) &&
       a->incoming >=0 && b->incoming >=0)
     return 0; /* the states have to be both final or both non final */
 
   // Check whether they have same number of transitions
   if (a->trans->size() != b->trans->size())
     return 0;
-  
+
   // Check wheter all transitions match (note, they are ordered according to target node)
-  for (s = a->trans->begin(), t = b->trans->begin(); s != a->trans->end() && t != b->trans->end(); ) { 
+  for (s = a->trans->begin(), t = b->trans->begin(); s != a->trans->end() && t != b->trans->end(); ) {
     /* Transitions differ */
     if (s->first != t->first || s->second != t->second) {
       /* If none of them is selfloop - return 0 */
@@ -194,7 +194,7 @@ int all_btrans_match(BState *a, BState *b) /* decides if the states are equivale
 
 int simplify_bstates() /* eliminates redundant states */
 {
-  BState *s, *s1, *s2;
+  BState *s, *s1;
   int changed = 0;
 
   for (s = bstates->nxt; s != bstates; s = s->nxt) {
@@ -219,14 +219,6 @@ int simplify_bstates() /* eliminates redundant states */
   }
   retarget_all_btrans();
 
-// This is not needed anymore - TODO: Confirm.
-//  for (s = bstates->nxt; s != bstates; s = s->nxt) {
-//    for (s2 = s->nxt; s2 != bstates; s2 = s2->nxt) {
-//      if(s->final == s2->final && s->id == s2->id) {
-//        s->id = ++gstate_id;
-//      }
-//    }
-//  }
   return changed;
 }
 
@@ -308,9 +300,9 @@ void basic_bisim_reduction() {
   int i;
   int init_color = -1;
   int true_color = -1;
-  
+
   if(bstates == bstates->nxt) return;
-  
+
   // initialization
   for(s = bstates->nxt; s != bstates; s = s->nxt) {
     if (s->final == accept) {
@@ -322,7 +314,7 @@ void basic_bisim_reduction() {
 //      color_nodes[2].push_back(s);
     }
   }
-  
+
   while (max_new != max_old) {
     max_old = max_new;
     color_nodes.clear();
@@ -337,9 +329,9 @@ void basic_bisim_reduction() {
       }
       i = insert_color(COL, P_S_COL);
       color_nodes[i].push_back(s);
-      if (i > max_new) max_new = i;      
+      if (i > max_new) max_new = i;
     }
-    
+
     /* Save new collors to nodes */
 
     for (cn_i = color_nodes.begin(), i = 1; cn_i != color_nodes.end(); cn_i++, i++) {
@@ -352,7 +344,7 @@ void basic_bisim_reduction() {
       }
     }
   }
-  
+
   // Build a new Buchi automaton
   bstate_count = 0;
   btrans_count = 0;
@@ -363,7 +355,7 @@ void basic_bisim_reduction() {
     s = add_state(cn_i->first, color_dict, init_color, true_color);
     s->nxt = stack->nxt;
     s->prv = stack;
-    s->nxt->prv = s;  
+    s->nxt->prv = s;
     stack->nxt = s;
     // set acceptance according the first node in the list
     to = cn_i->second.front();
@@ -411,15 +403,15 @@ void basic_bisim_reduction() {
 
 BState* add_state(int col, std::map<int, BState*>& color_dict, int init_color, int true_color) {
   std::map<int, BState*>::iterator it = color_dict.find(col);
-  
+
   if (it !=  color_dict.end()) {
     return color_dict[col];
   }
-  
+
   BState* s = (BState *) tl_emalloc(sizeof(BState)); /* creates a new state */
   s->gstate = (GState*) 0;
   if (col == init_color || col == true_color) {
-    s->id = ((col == init_color) ? -1 : 0);  
+    s->id = ((col == init_color) ? -1 : 0);
   } else {
   s->id = col;
   }
@@ -522,12 +514,12 @@ void strong_fair_sim_reduction() {
   int i, i1, i2;
   int init_color = -1;
   int true_color = -1;
-  
+
   bool **par_ord, **par_ord_new; // castecne usporadani na barvach
   int par_ord_size, par_ord_size_new;
-  
+
   if(bstates == bstates->nxt) return;
-  
+
   // initialization
   for(s = bstates->nxt; s != bstates; s = s->nxt) {
     if (s->final == accept) {
@@ -563,9 +555,9 @@ void strong_fair_sim_reduction() {
       remove_non_imaximal(P_S_COL.second, par_ord); // upravit insert_edge aby nebolo treba odoberat nemaximalne
       i = insert_color(COL, P_S_COL);
       color_nodes[i].push_back(s);
-      if (i > max_new) max_new = i;      
+      if (i > max_new) max_new = i;
     }
-    
+
     /* Save new collors to nodes */
     for (cn_i = color_nodes.begin(), i = 1; cn_i != color_nodes.end(); cn_i++, i++) {
       for (ln_i = cn_i->second.begin(); ln_i != cn_i->second.end(); ln_i++) {
@@ -576,7 +568,7 @@ void strong_fair_sim_reduction() {
           true_color = i;
       }
     }
-    
+
     /* New partial ordering */
     size_old = size_new;
     size_new = 0;
@@ -606,7 +598,7 @@ void strong_fair_sim_reduction() {
 //    size_old = size_new;
 //    size_new = color_nodes.size();
   }
-  
+
   // Build a new Buchi automaton
   stack = (BState *) tl_emalloc(sizeof(BState)); /* sentinel */
   stack->nxt = stack;
@@ -617,7 +609,7 @@ void strong_fair_sim_reduction() {
     s = add_state(cn_i->first, color_dict, init_color, true_color);
     s->nxt = stack->nxt;
     s->prv = stack;
-    s->nxt->prv = s;  
+    s->nxt->prv = s;
     stack->nxt = s;
     // set acceptance according the first node in the list
     to = cn_i->second.front();
@@ -658,7 +650,7 @@ void strong_fair_sim_reduction() {
   bstates = stack;
 }
 
-bool i_dominates(const pair_col& P1, const pair_col& P2, bool **par_ord) { 
+bool i_dominates(const pair_col& P1, const pair_col& P2, bool **par_ord) {
   return(par_ord[P2.first - 1][P1.first - 1] &&
     ((P1.second << P2.second) == bdd_true()));
 }
@@ -678,7 +670,7 @@ bool i_dominates(const set_next_col& L1, const set_next_col& L2, bool **par_ord)
 
   return(true);
 }
-       
+
 void remove_non_imaximal(set_next_col& L, bool **par_ord) {
   set_next_col::iterator l_i, l_j, l_k;
 
@@ -698,14 +690,14 @@ void add_opt_trans(BState *s, BState *to, bdd& label, bool **par_ord) {
   std::map<BState*, bdd>::iterator t_i, t_j;
   int c, c1;
   c = to->incoming - 1;
-  
+
   // Check whether the new transition is not dominated
   for (t_i = s->trans->begin(); t_i != s->trans->end(); t_i++) {
     c1 = (t_i->first)->incoming - 1;
     if (par_ord[c][c1] && ((t_i->second << label) == bdd_true()))
       return;
   }
-  
+
   // Erase transition which are dominated
   for (t_i = s->trans->begin(); t_i != s->trans->end();) {
     t_j = t_i; t_j++;
@@ -714,7 +706,7 @@ void add_opt_trans(BState *s, BState *to, bdd& label, bool **par_ord) {
       s->trans->erase(t_i);
     t_i = t_j;
   }
-  
+
   // Add the new transition
   if ((*s->trans)[to] == bdd_false()) {
     (*s->trans)[to] = label;
@@ -849,7 +841,7 @@ void make_btrans(BState *s) /* creates all the transitions from a state */
 
 // on-the-fly optimalization has no sense as there is always only one transition to the state 'to'
 //        for(t1 = s->trans->begin(); t1 != s->trans->end();) {
-//          if(tl_simp_fly && 
+//          if(tl_simp_fly &&
 //             (to == t1->first) &&
 //             ((gt2->second << t1->second) == bdd_true())) { /* old t1 is redundant */
 //            t1->first->incoming--;
@@ -875,7 +867,7 @@ void make_btrans(BState *s) /* creates all the transitions from a state */
 //        }
       }
     }
-  
+
   if(tl_simp_fly) {
     if(s->trans->empty()) { /* s has no transitions */
       delete s->trans;
@@ -904,7 +896,7 @@ void make_btrans(BState *s) /* creates all the transitions from a state */
         if(s1->prv == s)
           s1->prv = s->prv;
       return;
-    } 
+    }
   }
   s->nxt = bstates->nxt; /* adds the current state to 'bstates' */
   s->prv = bstates;
@@ -950,7 +942,7 @@ void print_buchi(BState *s) /* dumps the Buchi automaton */
       bdd_allsat(t->second, allsatPrintHandler);
     }
     fprintf(tl_out, " -> ");
-    if(t->first->id == -1) 
+    if(t->first->id == -1)
       if(s->final == accept)
         fprintf(tl_out, "accept_init\n");
       else
@@ -1086,7 +1078,7 @@ void print_ba_hoaf(const std::string& name = "BA") {
       init_state = bstate_count;
     bstate2Int[s] = bstate_count++;
   }
-  
+
   print_ba_hoaf_header(bstate_count, init_state, name);
 
   fprintf(tl_out, "--BODY--\n");
@@ -1116,7 +1108,6 @@ void print_ba_hoaf(const std::string& name = "BA") {
 void print_ba() {
   std::map<BState*, bdd>::iterator t;
   BState *s;
-  int accept_all = 0;
 
   fprintf(tl_out, "acc = \"1\";\n");
   for(s = bstates->prv; s != bstates; s = s->prv) {
@@ -1146,12 +1137,12 @@ static std::ostream* where_os;
 void allsatPrintHandlerDve(char* varset, int size)
 {
   int print_and = 0;
-  
+
   if (print_or) *where_os << " || ";
   *where_os << "(";
   for (int v=0; v<size; v++)
   {
-    if (varset[v] < 0) continue;       
+    if (varset[v] < 0) continue;
     if (print_and) *where_os << " && ";
     if (varset[v] == 0)
       *where_os << "not (" << sym_table[v] << ")";
@@ -1170,7 +1161,6 @@ void print_dve_buchi(std::ostream& o_stream) {
   std::ostringstream states, a_states, i_states;
   bool acc_state = false;
 
-  int accept_all = 0;
   if(bstates->nxt == bstates) { /* empty automaton */
     o_stream << "process LTL_property {\n";
     o_stream << "state q1;\n";
@@ -1239,7 +1229,7 @@ void print_dve_buchi(std::ostream& o_stream) {
 |*                       Main method                                *|
 \********************************************************************/
 
-void mk_buchi() 
+void mk_buchi()
 {/* generates a Buchi automaton from the generalized Buchi automaton */
   int i;
   BState *s = (BState *)tl_emalloc(sizeof(BState));
@@ -1253,7 +1243,7 @@ void mk_buchi()
     bsDict[i] = new std::map<GState*, BState*>();
   }
 #endif
-  
+
   bstack        = (BState *)tl_emalloc(sizeof(BState)); /* sentinel */
   bstack->nxt   = bstack;
   bremoved      = (BState *)tl_emalloc(sizeof(BState)); /* sentinel */
@@ -1283,7 +1273,7 @@ void mk_buchi()
 
 // on-the-fly optimalization has no sense as there is always only one transition to the state 'to'
 //          for(t1 = s->trans->begin(); t1 != s->trans->end(); ) {
-//            if(tl_simp_fly && 
+//            if(tl_simp_fly &&
 //               (to == t1->first) &&
 //               ((gt2->second << t1->second) == bdd_true())) { /* t1 is redundant */
 //              t1->first->incoming--;
@@ -1307,7 +1297,7 @@ void mk_buchi()
 //          }
         }
       }
-  
+
   while(bstack->nxt != bstack) { /* solves all states in the stack until it is empty */
     s = bstack->nxt;
     bstack->nxt = bstack->nxt->nxt;
@@ -1334,7 +1324,7 @@ void mk_buchi()
     if (tl_verbose == 1) {
       fprintf(tl_out, "Buchi automaton before simplification\n");
       print_buchi(bstates->nxt);
-      if(bstates == bstates->nxt) 
+      if(bstates == bstates->nxt)
         fprintf(tl_out, "empty automaton, refuses all words\n");
     } else {
       print_ba_hoaf("BA before simplification");
@@ -1349,12 +1339,12 @@ void mk_buchi()
 //      simplify_btrans();
       if(tl_simp_scc) simplify_bscc();
     }
-    
+
     if(tl_verbose) {
       if (tl_verbose == 1) {
         fprintf(tl_out, "Buchi automaton after simplification\n");
         print_buchi(bstates->nxt);
-        if(bstates == bstates->nxt) 
+        if(bstates == bstates->nxt)
           fprintf(tl_out, "empty automaton, refuses all words\n");
       } else {
         print_ba_hoaf();
@@ -1371,7 +1361,7 @@ void mk_buchi()
     do {
       states = bstate_count;
       trans = btrans_count;
-      
+
       set_redundand_accept();
       basic_bisim_reduction();
       remove_redundand_accept();
@@ -1386,7 +1376,7 @@ void mk_buchi()
     do {
       states = bstate_count;
       trans = btrans_count;
-      
+
       set_redundand_accept();
       strong_fair_sim_reduction();
       remove_redundand_accept();

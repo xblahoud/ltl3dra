@@ -95,9 +95,6 @@ static int	hasuform=0, cnt=0;
 std::string ltl_file;
 std::string add_ltl;
 
-static void	tl_endstats(void);
-static void	non_fatal(char *, char *);
-
 inline void
 alldone(int estatus)
 {
@@ -192,8 +189,8 @@ print_version()
 
 int
 tl_main(std::string &argv)
-{ 
-  int i;
+{
+  std::__cxx11::basic_string<char>::size_type i;
 	for (i = 0; i < argv.length(); i++)
 	{	if (argv[i] == '\t'
 		||  argv[i] == '\"'
@@ -216,8 +213,7 @@ unknown_option(const char* str)
 
 int
 main(int argc, char *argv[])
-{	int i;
-	tl_out = stdout;
+{	tl_out = stdout;
 
 	while (argc > 1 && argv[1][0] == '-')
         {       switch (argv[1][1]) {
@@ -274,7 +270,7 @@ main(int argc, char *argv[])
                 }
                 argc--, argv++;
         }
-  
+
         if(ltl_file.empty() && add_ltl.empty()) {
           printf("ltl3dra: no formula given at input\n\n");
           usage(1);
@@ -436,5 +432,3 @@ fatal(const char *s1, char *s2)
         non_fatal(s1, s2);
         alldone(1);
 }
-
-

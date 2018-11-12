@@ -41,7 +41,7 @@
 #include <map>
 
 /* Set LTL3DRA's version number */
-#define VERSION_NUM "0.2.6"
+#define VERSION_NUM "0.2.7"
 #define DRA
 
 class cset;
@@ -287,9 +287,9 @@ class cset
    cset(int t)          : type(t), s(new_set(t)) {};
    cset(int el, int t)  : type(t), s(make_set(el, t)) {};
    cset(const cset &r)  : type(r.type), s(dup_set(r.s, r.type)) {};
-   
+
    ~cset(void)         { tfree(s); }
-   
+
    void insert(int el);
    void erase(int el);
    int  is_elem(int el) const;
@@ -308,21 +308,21 @@ class cset
    int* get_set(void) const;
    int* to_list(void) const;
    int  is_subset_of(const cset &r) const;
-   
+
    cset& operator=(const cset &r);
    bool operator<(const cset &r) const;
    bool operator==(const cset &r) const;
    bool operator!=(const cset &r) const;
-   
+
    void print(void) const;
 
    void print_and_mark(std::ostream &out, int *m) const;
-   
+
  private:
-    
+
+		int type;
     int *s;
-    int type;
-    
+
     friend std::ostream &operator<<(std::ostream &, const cset &);
 };
 
@@ -383,21 +383,21 @@ inline int cset::is_subset_of(const cset &r) const {
 
 class AProd {
   public:
-    
+
     AProd(void)
       : prod(emalloc_atrans()), trans((std::map<cset, ATrans*> *) 0) { prod->label = bdd_true(); }
-    AProd(int i, std::map<cset, ATrans*> *t) 
+    AProd(int i, std::map<cset, ATrans*> *t)
       : prod((ATrans *) 0), astate(i), trans(t) { if (trans) { curr_trans = trans->begin(); last_trans = --trans->end(); } }
     ~AProd(void) { if (prod) free_atrans(prod, 0); }
 
-    int astate;
-    std::map<cset, ATrans*> *trans;
-    std::map<cset, ATrans*>::iterator curr_trans, last_trans;
     struct ATrans *prod;
+		int astate;
+		std::map<cset, ATrans*> *trans;
+    std::map<cset, ATrans*>::iterator curr_trans, last_trans;
     cset prod_to;
     AProd *nxt;
     AProd *prv;
-    
+
 //    std::pair<const cset, ATrans*>& get_curr_trans();
     void merge_to_prod(AProd *p1, const std::pair<const cset, ATrans*> &trans);
     void merge_to_prod(AProd *p1, int i);
@@ -434,7 +434,7 @@ class cGTrans {
     bool operator==(const cGTrans &t) const;
     bool operator!=(const cGTrans &t) const;
 //    cGTrans& operator=(const cGTrans &t);
-    
+
     void decrement_incoming(void);
     // check wheter the newly build transitions dominates any existing or is dominated
     // true value is returned if the new transition shoul be added
@@ -447,12 +447,12 @@ class cGTrans {
     bool add_trans(bdd label, cset *fin, GState* to);
     bool empty(void);
     size_t size(void);
-    
+
     std::map<GState*, std::map<cset, bdd> >::iterator begin();
     std::map<GState*, std::map<cset, bdd> >::iterator end();
     std::map<cset, bdd>& operator[] (GState* x);
     void erase(std::map<GState*, std::map<cset, bdd> >::iterator &tx);
-    
+
   private:
     std::map<GState*, std::map<cset, bdd>, GStateComp> trans;
 };
@@ -502,7 +502,7 @@ inline void cGTrans::erase(std::map<GState*, std::map<cset, bdd>, GStateComp>::i
 
 #define ZN	(Node *)0
 #define ZS	(Symbol *)0
-#define Nhash	255    	
+#define Nhash	255
 #define True	tl_nn(TRUE,  ZN, ZN)
 #define False	tl_nn(FALSE, ZN, ZN)
 #define Not(a)	push_negation(tl_nn(NOT, a, ZN))

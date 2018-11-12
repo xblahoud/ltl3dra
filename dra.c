@@ -90,8 +90,7 @@ GState* get_gstate_and_trans(const cset& set);
 
 bool are_F_successors(cset& Fs, cset& sucs) {
   int *list = sucs.to_list();
-  int i;
-  
+
   for (int i = 1; i < list[0]; i++) {
     if (empty_intersect_sets(predecessors[list[i]], Fs.get_set(), 0)) {
       if (list)
@@ -99,7 +98,7 @@ bool are_F_successors(cset& Fs, cset& sucs) {
       return false;
     }
   }
-  
+
   if (list)
     tfree(list);
   return true;
@@ -162,7 +161,7 @@ void DRAtrans::insert_label(const DRAstate* from, bdd l) {
 void DRAtrans::remove_redundant_acc_conds(const std::list<int>& toBeRemoved) {
   std::map<GenCondMap_t, bdd>::iterator m_j, t;
   std::list<int>::const_iterator l_i;
-  
+
   std::map<GenCondMap_t, bdd> newCondsAndLabels;
 
   for (m_j = conds_to_labels.begin(); m_j != conds_to_labels.end(); m_j++) {
@@ -180,7 +179,7 @@ void DRAtrans::remove_redundant_acc_conds(const std::list<int>& toBeRemoved) {
 
     newCondsAndLabels.insert(std::make_pair(tempConds, m_j->second));
   }
-  
+
   conds_to_labels.swap(newCondsAndLabels);
 }
 
@@ -266,12 +265,12 @@ GenCond DRAtrans::allowed_for_Z(int i, const DRAstate* from, bdd label) {
       }
     }
   }
-  
+
   if (tl_dra_opt && c.allowed) {
     condSethasTrans[i-1].first = true;
-    
+
     // compute inclusion on conditions
-    int j, k;
+    std::vector<bool>::size_type j, k;
     for (j = 0; j < c.f_accepting.size(); j++) {
       for (k = j+1; k < c.f_accepting.size(); k++) {
         if (c.f_accepting[j] && !c.f_accepting[k]) {
@@ -284,18 +283,19 @@ GenCond DRAtrans::allowed_for_Z(int i, const DRAstate* from, bdd label) {
       }
     }
   }
-  
+
   return c;
 }
 
 // Checks whether \forall j \in J \exists i \in I so that I_i \subseteq I_j holds.
 // Therefore, if \exists j \in J \forall i \in I such that I_i \not\subseteq I_j it is violated and return false.
 bool evaluate_subsets_for_implication(std::vector<cset>& subsets, std::vector<bool>& f_acc1, std::vector<bool>& f_acc2, int Z_2) {
-  int i, j, *list;
+  int i, *list;
+  std::vector<bool>::size_type j;
   cset& c = IntToZ_set[Z_2];
-  
+
   // subset[j] stores the set of all I_i's for which there is a chance that I_i \subseteq I_j
-  
+
   // If J is empty than it hols trivially
   if (c.size() == 0)
     return true;
@@ -339,7 +339,7 @@ GenCondMap_t DRAtrans::evaluate_acc_cond(const DRAstate* from, bdd label) {
     int i = Z_setToInt[*m_i];
     cond.insert(std::make_pair(i, allowed_for_Z(i, from, label)));
   }
-  
+
   if (tl_dra_opt && !cond.empty()) {
     GenCondMap_t::iterator m_i, m_j;
     for (m_i = cond.begin(); m_i != --cond.end(); m_i++) {
@@ -355,14 +355,14 @@ GenCondMap_t DRAtrans::evaluate_acc_cond(const DRAstate* from, bdd label) {
           if (implicationTable[m_i->first-1][m_j->first-1]) {
             // It is still possible that Z_i => Z_j so check that still
             // \forall j \in J \exists i \in I so that I_i can be subset of I_j
-            implicationTable[m_i->first-1][m_j->first-1] = 
+            implicationTable[m_i->first-1][m_j->first-1] =
               evaluate_subsets_for_implication(potentialSubsetsCache[m_i->first-1][m_j->first-1],
                                                  m_i->second.f_accepting, m_j->second.f_accepting, m_j->first);
           }
           if (implicationTable[m_j->first-1][m_i->first-1]) {
             // It is still possible that Z_j => Z_i so check that still
             // \forall i \in I \exists j \in J so that I_j can be subset of I_i
-            implicationTable[m_j->first-1][m_i->first-1] = 
+            implicationTable[m_j->first-1][m_i->first-1] =
               evaluate_subsets_for_implication(potentialSubsetsCache[m_j->first-1][m_i->first-1],
                                                  m_j->second.f_accepting, m_i->second.f_accepting, m_i->first);
           }
@@ -370,7 +370,7 @@ GenCondMap_t DRAtrans::evaluate_acc_cond(const DRAstate* from, bdd label) {
       }
     }
   }
-  
+
   return cond;
 }
 
@@ -379,7 +379,7 @@ void compute_allowed_conf() {
   int *list, i, j = 1;
   cset hoaf_acc;
   cset must, may;
-  
+
   for (s_i = Z_set.begin(); s_i != Z_set.end(); s_i++) {
     Z_setToInt.insert(std::make_pair(*s_i, j));
     IntToZ_set.insert(std::make_pair(j, *s_i));
@@ -398,7 +398,7 @@ void compute_allowed_conf() {
 
     std::set<cset> s_1, s_2;
     s_1.insert(must);
-    
+
     for(i=1; i < list[0]; i++) {
       for(s_j=s_1.begin(); s_j!=s_1.end(); s_j++) {
         s_2.insert(*s_j);
@@ -409,10 +409,10 @@ void compute_allowed_conf() {
       s_1.swap(s_2);
       s_2.clear();
     }
-    
+
     if (list)
       tfree(list);
-    
+
     ACz.insert(std::make_pair(j, s_1));
     j++;
   }
@@ -475,7 +475,6 @@ GState* dra::find_gstate(cset *set, GState *s)
 
 void dra::make_gtrans(GState *s) { /* creates all the transitions from a state */
   int i, *list, trans_exist = 1;
-  GState *s1;
   ATrans *t1; /* *free, */
   cset *t1_to;
   AProd *prod = new AProd(); /* initialization */
@@ -532,7 +531,7 @@ void dra::make_gtrans(GState *s) { /* creates all the transitions from a state *
       p = p->prv;
     }
   }
-  
+
   tfree(list); /* free memory */
   while(prod->nxt != prod) {
     AProd *p = prod->nxt;
@@ -563,12 +562,12 @@ DRAstate* find_drastate(DRAstate* s) {
 
 std::list<bdd> prepare_det_constraints() {
   int i;
-  bdd a;  
+  bdd a;
 
   std::list<bdd> l_1, l_2;
   std::list<bdd>::iterator j;
   l_1.push_back(bdd_true());
-  
+
 //  for(i=0; i<sym_id; i++) { CHANGE of order due to ltl2dstar output
   for(i=sym_id-1; i>=0; i--) {
     a = bdd_ithvar(i);
@@ -580,7 +579,7 @@ std::list<bdd> prepare_det_constraints() {
     l_2.clear();
   }
 
-  return l_1;  
+  return l_1;
 }
 
 GState* get_gstate_and_trans(const cset& set) {
@@ -596,12 +595,11 @@ GState* get_gstate_and_trans(const cset& set) {
   }
   if ((*gs)->trans->empty())
     make_gtrans(*gs);
-    
+
   return (*gs);
 }
 
 void make_DRAtrans(const DRAstate* s) {
-  int i, trans_exist = 1;
   std::set<cset>::iterator c_x, c_y, c_z, c_i;
   std::list<bdd>::iterator l_i;
 
@@ -807,7 +805,7 @@ void remove_redundant_acc_conds(std::list<int>& toBeRemoved) {
   // Erase the acc condition from transitions
   std::set<DRAstate*, DRAstateComp>::iterator s_i;
   std::map<DRAstate*, DRAtrans>::iterator t_i;
-  
+
   for(s_i=drastates.begin(); s_i!=drastates.end(); s_i++) {
     for(t_i=(*s_i)->trans->begin(); t_i!=(*s_i)->trans->end(); t_i++) {
       t_i->second.remove_redundant_acc_conds(toBeRemoved);
@@ -830,23 +828,24 @@ void remove_redundant_acc_conds(std::list<int>& toBeRemoved) {
 }
 
 bool evaluate_condSetFlag(condSetFlag_t& flag, const cset&c) {
-  int i;
-  
+  std::vector<std::vector<bool> >::size_type i;
+
   if (!flag.first)
     return true;
- 
+
   for (i = 0; i < flag.second.size(); i++) {
     if (c.is_elem(pos_to_acc[i]) && !flag.second[i])
       return true;
   }
-  
+
   return false;
 }
 
-bool evaluate_implicationTable(int i) {
-  for (int j=0; j<implicationTable.size(); j++) {
+bool evaluate_implicationTable(std::vector<std::vector<bool> >::size_type i) {
+  std::vector<std::vector<bool> >::size_type j;
+  for (j=0; j<implicationTable.size(); j++) {
     if (implicationTable[i][j] && j!=i &&
-        // Checks that converse does not hold or 
+        // Checks that converse does not hold or
         // the second condition has not been removed yet
         // so we don't remove both in case of i=>j and j=>i
         (!implicationTable[j][i] || !isRemoved[j]))
@@ -857,7 +856,8 @@ bool evaluate_implicationTable(int i) {
 
 // Removes useless I_k of condition (F, I_1,...,I_k,...,I_j)
 void remove_redundant_acc_I_sets() {
-  int i, j, k, I_j, I_k;
+  int I_j, I_k;
+  std::vector<std::vector<bool> >::size_type i;
   cset fin_states;
   for (i = 0; i<Z_set.size(); i++) {
     if (!isRemoved[i]) {
@@ -887,7 +887,6 @@ void remove_redundant_acc_I_sets() {
           tfree(list);
       }
       // Update the information for HOAF output
-      std::map<int, std::pair<int, int> >::iterator hz_i;
 
       //DEBUG
       //std::cout << removedI_sets[i].size() << " vs. " << removed_for_this_Z << std::endl;
@@ -900,7 +899,7 @@ void remove_redundant_acc_I_sets() {
       //std::cout << i+1 << ":" << removed_for_this_Z << std::endl;
       //END DEBUG
 
-      for(hz_i = Zindex_to_hoaf.begin(); hz_i != Zindex_to_hoaf.end(); hz_i++) {
+      for(auto hz_i = Zindex_to_hoaf.begin(); hz_i != Zindex_to_hoaf.end(); hz_i++) {
           if (hz_i->first <= i+1)
             continue;
           (hz_i->second).first -= removed_for_this_Z;
@@ -915,10 +914,10 @@ bool all_dratrans_match(DRAstate *s1, DRAstate *s2) {
 
   if (s1->trans->size() != s2->trans->size())
     return false;
-    
+
   m_1 = s1->trans->begin();
   m_2 = s2->trans->begin();
-  
+
   for (; m_1 != s1->trans->end(); m_1++, m_2++) {
     if (m_1->first != m_2->first|| m_1->second != m_2->second)
       return false;
@@ -939,7 +938,7 @@ void remove_drastate(DRAstate *s, DRAstate *sub) {
   decrement_incoming(s->trans);
   delete s->trans;
   s->trans = (std::map<DRAstate*, DRAtrans>*) 0;
-  
+
   s->sub = sub;
   for (s_i = draRemoved.begin(); s_i != draRemoved.end(); s_i++)
     if ((*s_i)->sub == s)
@@ -955,10 +954,10 @@ void retarget_all_dratrans() {
 
   if (draRemoved.size() == 0)
     return;
-  
+
   if (!dra_init->trans)
     dra_init = dra_init->sub; // dra_init has been removed -> replace it
-    
+
   for (s_i = drastates.begin(); s_i != drastates.end(); s_i++) {
     trans = (*s_i)->trans;
     for (t_i = trans->begin(); t_i != trans->end(); ) {
@@ -991,9 +990,9 @@ void retarget_all_dratrans() {
       }
     }
   }
-  
+
   for (s_i = draRemoved.begin(); s_i != draRemoved.end(); s_i++) {
-    delete *s_i; 
+    delete *s_i;
   }
   draRemoved.clear();
 }
@@ -1041,10 +1040,10 @@ void remove_redundant_dra_init() {
       DRAstate *s = m_x->first;
       if (s == dra_init)
           continue;
-      
+
       if (dra_init->trans->size() != s->trans->size())
         continue;
-      
+
       for (m_y=dra_init->trans->begin(); m_y!=dra_init->trans->end(); m_y++) {
         DRAstate *to = m_y->first;
         DRAtrans *t1 = &m_y->second;
@@ -1053,14 +1052,14 @@ void remove_redundant_dra_init() {
           break;
 
         DRAtrans *t2 = &m_z->second;
-        
+
         bdd label_t1 = bdd_false();
-        bdd label_t2 = bdd_false(); 
-          
+        bdd label_t2 = bdd_false();
+
         std::map<GenCondMap_t, bdd>::iterator m_i, m_j;
         for (m_i=t1->conds_to_labels.begin(); m_i!=t1->conds_to_labels.end(); m_i++) {
           label_t1 |= m_i->second;
-        } 
+        }
         for(m_j=t2->conds_to_labels.begin(); m_j!=t2->conds_to_labels.end(); m_j++) {
           label_t2 |= m_j->second;
         }
@@ -1069,7 +1068,7 @@ void remove_redundant_dra_init() {
           break;
         }
       }
-      
+
       if (m_y==dra_init->trans->end()) {
         // Delete old initial state
         drastates.erase(dra_init);
@@ -1110,14 +1109,15 @@ std::ostream& dra::operator<<(std::ostream &out, const GenCond &c) {
     out << (*it?"+":"-");
   }
   out << "}>";
+  return out;
 }
 
 void GenCond::print(std::ostream &out, int Z_i) const {
-  int i;
   bool start = true;
   cset& z_set = IntToZ_set[Z_i];
 
   out << "<" << (allowed?"+":"-") << ",{";
+  std::vector<bool>::size_type i;
   for (i = 0; i < f_accepting.size(); i++) {
     if (z_set.is_elem(pos_to_acc[i]) &&
         (!tl_dra_opt || !removedI_sets[Z_i-1].is_elem(pos_to_acc[i]) ) ) {
@@ -1139,7 +1139,8 @@ bool GenCond::print_hoaf(std::ostream &out, int Z_i, bool first) const {
     if (first)  {out << "{"; first = false;}
     out << Zindex_to_hoaf[Z_i].first;
   }
-  for (int i = 0; i < f_accepting.size(); i++) {
+  std::vector<bool>::size_type i;
+  for (i = 0; i < f_accepting.size(); i++) {
     // Choose only the f-states for which I_Z,f is defined
     // I.e. f \in Z, I_f was not removed due optimizations
     if (z_set.is_elem(pos_to_acc[i]) &&
@@ -1311,7 +1312,7 @@ void print_dra_hoaf(std::ostream &out, const std::string& name = "") {
 void print_dra_old(std::ostream &out) {
   std::set<DRAstate*, DRAstateComp>::iterator s_i;
   std::map<DRAstate*, DRAtrans>::iterator t_i;
-  
+
   out << "Init: " << dra_init->id << std::endl;
   for(s_i=drastates.begin(); s_i!=drastates.end(); s_i++) {
     out << "state " << (*s_i)->id << ": " << *(*s_i) << std::endl;
@@ -1348,15 +1349,16 @@ void mk_dra() {
     condSetFlag_t tempFlag = std::make_pair(false, std::vector<bool>(final[0]-1, false));
     condSethasTrans.resize(Z_set.size(), tempFlag);
     isRemoved.resize(Z_set.size(), false);
-    
+
     int f_states = final[0]-1;
     inclusionTable_t tempTable = inclusionTable_t(f_states, std::vector<bool>(f_states, true));
     condSubsets.resize(Z_set.size(), tempTable);
     removedI_sets.resize(Z_set.size(), cset(0));
-    
+
     implicationTable.resize(Z_set.size(),std::vector<bool>(Z_set.size(),true));
     cset temp_set;
-    for (int i = 0; i<Z_set.size(); i++) {
+    std::vector<bool>::size_type i;
+    for (i = 0; i<Z_set.size(); i++) {
       temp_set.intersect_sets(IntToZ_set[i+1], final_set);
       std::vector<std::vector<cset> > tempSubsets(Z_set.size(), std::vector<cset>(f_states, temp_set));
       potentialSubsetsCache.push_back(tempSubsets);
@@ -1377,7 +1379,7 @@ void mk_dra() {
 #endif
     }
 
-  
+
   dra_init = new DRAstate(DRAstate_id++);
   for(s = gstates->nxt; s != gstates; s = s->nxt) {
     dra_init->insert(*s->nodes_set);
@@ -1391,15 +1393,15 @@ void mk_dra() {
 
     make_DRAtrans(dra);
   }
- 
+
   if (gremoved->nxt != gremoved)
     std::cerr << "Error: Undefined behaviour -- states in gremoved std::queue!!!\n";
 
-#if SUPP_OUT == YES  
+#if SUPP_OUT == YES
   fprintf(tl_out, "\nGen automaton\n");
   print_generalized();
 #endif
-  
+
   if (tl_verbose == 1) {
     std::cout << "\nCo-buchi accepting states:\n{";
     for (int i = 1; i < final[0]; i++) {
@@ -1409,7 +1411,7 @@ void mk_dra() {
     }
     std::cout << "}\n\n";
   }
-  
+
   if (tl_verbose == 1) {
     std::set<cset>::iterator s_i;
     std::cout << "Z_set:\n";
@@ -1462,27 +1464,28 @@ void mk_dra() {
   }
 
   if (tl_dra_opt) {
-    
+
     std::list<int> toBeRemoved;
-    
-    for (int i = 0; i < Z_set.size(); i++) {
+
+    std::vector<bool>::size_type i;
+    for (i = 0; i < Z_set.size(); i++) {
       if (evaluate_condSetFlag(condSethasTrans[i], IntToZ_set[i+1]) ||
           evaluate_implicationTable(i)) {
         toBeRemoved.push_back(i+1);
         isRemoved[i] = true;
       }
     }
-    
+
     if (toBeRemoved.size() > 0) {
       remove_redundant_acc_conds(toBeRemoved);
-    
+
       // Save number of removed acc_conds for output of the number of acc_conds
       removedConds = toBeRemoved.size();
     }
-    
+
     // Removes useless I_k of condition (F, I_1,...,I_k,...,I_j)
     remove_redundant_acc_I_sets();
-    
+
   }
 
   if(tl_simp_diff) {
@@ -1498,4 +1501,3 @@ void mk_dra() {
     print_dra_hoaf(std::cout,"TGDRA");
   }
 }
-

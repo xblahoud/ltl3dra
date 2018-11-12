@@ -267,7 +267,7 @@ GState *remove_gstate(GState *s, GState *s1) /* removes a state */
     if(s1->prv == s)
       s1->prv = s->prv;
   return prv;
-} 
+}
 
 int simplify_gtrans() /* simplifies the transitions */
 {
@@ -300,7 +300,7 @@ int simplify_gtrans() /* simplifies the transitions */
           /* acceptance conditions matter - benefit from the ordering */
           for (rt1 = t->second.rbegin(); rt1 != t->second.rend(); rt1++) {
             for (rt2 = rt1, rt2++; rt2 != t->second.rend(); rt2++) {
-              if (rt2->first.is_subset_of(rt1->first) && 
+              if (rt2->first.is_subset_of(rt1->first) &&
                   ((rt1->second << rt2->second) == bdd_true())) {
                 // remove rt2
                 rx = rt2--;
@@ -340,7 +340,7 @@ void retarget_all_gtrans()
                 *l = t2->second;
               } else {
                 *l |= t2->second;
-              }              
+              }
             }
           }
         }
@@ -357,7 +357,7 @@ void retarget_all_gtrans()
   }
 }
 
-int all_gtrans_match(GState *a, GState *b, int use_scc) 
+int all_gtrans_match(GState *a, GState *b, int use_scc)
 { /* decides if the states are equivalent */
   if (a->trans == b->trans) return 1; // sentinel state found
   if (use_scc) {
@@ -367,12 +367,12 @@ int all_gtrans_match(GState *a, GState *b, int use_scc)
 
     std::map<GState*, std::map<cset, bdd>, GStateComp>::iterator a_t1, b_t1;
     std::map<cset, bdd>::iterator a_t2, b_t2;
-    
+
     for (a_t1 = a->trans->begin(), b_t1 = b->trans->begin(); a_t1 != a->trans->end(); a_t1++, b_t1++) {
       // We must have tranisions going to the same state
       if (a_t1->first != b_t1->first)
         return 0;
-        
+
       // Check whether both states have same transitions going to that same state
       // Firs we check whether acceptance conditions may be ignored
       if (in_set(bad_scc, a->incoming) ||
@@ -433,7 +433,7 @@ int simplify_gstates() /* eliminates redundant states */
       /* if scc(a)>scc(b) and scc(a) is non-trivial then all_gtrans_match(a,b,use_scc) must fail */
       if(a->incoming > b->incoming) /* scc(a) is trivial */
         a = remove_gstate(a, b);
-      else /* either scc(a)=scc(b) or scc(b) is trivial */ 
+      else /* either scc(a)=scc(b) or scc(b) is trivial */
         remove_gstate(b, a);
       changed++;
       continue;
@@ -557,7 +557,7 @@ int is_final(cset *from, ATrans *at, cset *at_to, int i) /*is the transition fin
   return 0;
 }
 
-GState *find_gstate(cset *set, GState *s) 
+GState *find_gstate(cset *set, GState *s)
 { /* finds the corresponding state, or creates it */
 
   if(tl_f_components && compute_directly) return s;
@@ -609,10 +609,10 @@ GState *find_gstate(cset *set, GState *s)
 }
 
 int check_postpone(int *list) {
-  int i, j, out = 0;
-  
+  int i, out = 0;
+
   if (list[0] <= 2) return 0;
-  
+
   for(i = 1; i < list[0]; i++) {
     if (in_set(UXp_nodes, list[i]) && !in_set(tecky, list[i])) {
       if (!in_set(INFp_nodes, list[i])) {
@@ -647,7 +647,7 @@ void remove_redundand_targets(cset *set, cset *fin) {
   }
   fprintf(tl_out, "\n");*/
 #endif
- 
+
   for(i = 1; i < list[0]; i++) {
     if (in_set(Falpha_nodes, list[i]) &&
         is_succ_off_some_GF(list, list[i])) {
@@ -694,7 +694,7 @@ int can_be_optimized(cset *set) {
 
 int check_if_acc_node(int *list) {
   int i;
-  
+
   for(i = 1; i < list[0]; i++) {
     if (!in_set(V_nodes, list[i]) && !in_set(tecky, list[i]))
       return 0;
@@ -704,13 +704,14 @@ int check_if_acc_node(int *list) {
 
 int included_big_set(cset *set_1, cset *set_2, GState *s) {
 /*  if (empty_intersect_sets(set_1, set_2, 0)) return 0;*/
-  if (tl_ltl3ba && UG_pred != NULL && 
+  if (tl_ltl3ba && UG_pred != NULL &&
       (set_1 != set_2) && (set_1 != s->nodes_set) &&
       (set_1 != s->nodes_set) &&  !empty_intersect_sets(is_Gs, set_2->get_set(), 0)) {
     int *set = make_set(-1, 0);
     copy_set(set_2->get_set(), set, 0);
-    int ii, jj, mod = 8 * sizeof(int);
-            
+    int ii;
+    long unsigned int jj, mod = 8 * sizeof(int);
+
     for(ii = 0; ii < node_size; ii++) {
       for(jj = 0; jj < 8 * sizeof(int); jj++) {
         if((set_2->get_set())[ii] & (1 << jj)) {
@@ -745,7 +746,7 @@ void make_gtrans(GState *s) { /* creates all the transitions from a state */
 
 //  std::cout << std::endl << "Spracuvam stav: " << s->id << " s->nodes_set: " << *s->nodes_set << std::endl;
 
-#if SUPP_OUT == YES  
+#if SUPP_OUT == YES
     fprintf(tl_out, "Check: ");
     for(i = 1; i < list[0]; i++) {
             fprintf(tl_out, "%d, ", list[i]);
@@ -755,7 +756,7 @@ void make_gtrans(GState *s) { /* creates all the transitions from a state */
 
   /* Check whether state is a GF component and can be computed directly */
   if (tl_f_components && included_set(s->nodes_set->get_set(), GFcomp_nodes, 0)) {
-#if SUPP_OUT == YES  
+#if SUPP_OUT == YES
     fprintf(tl_out, "Directly: ");
     for(i = 1; i < list[0]; i++) {
         fprintf(tl_out, "%d, ", list[i]);
@@ -769,12 +770,12 @@ void make_gtrans(GState *s) { /* creates all the transitions from a state */
     if (tl_postpone && !empty_intersect_sets(s->nodes_set->get_set(), INFp_nodes, 0))
       postpone = check_postpone(list);
     else
-      postpone = 0; 
+      postpone = 0;
 /*    fprintf(tl_out, "Not directly\n");*/
   }
-  
+
 #if SUPP_OUT == YES
-  if (postpone) {  
+  if (postpone) {
     fprintf(tl_out, "Postpone (%d): ", postpone);
     for(i = 1; i < list[0]; i++) {
         fprintf(tl_out, "%d, ", list[i]);
@@ -793,7 +794,7 @@ void make_gtrans(GState *s) { /* creates all the transitions from a state */
       trans_exist = 0;
       break;
     }
-    if ((postpone && in_set(INFp_nodes, list[i])) && 
+    if ((postpone && in_set(INFp_nodes, list[i])) &&
         (postpone == 2 || !in_set(UXp_nodes, list[i]))) {
       p = new AProd(list[i], empty_t);
       p->merge_to_prod(prod->nxt, p->astate);
@@ -834,7 +835,8 @@ void make_gtrans(GState *s) { /* creates all the transitions from a state */
               !empty_intersect_sets(is_UG, t1_to->get_set(), 0) &&
               !empty_intersect_sets(is_Gs, t1_to->get_set(), 0)) {
             int *set = intersect_sets(is_UG, t1_to->get_set(), 0);
-            int ii, jj, mod = 8 * sizeof(int);
+            int ii;
+            long unsigned int jj, mod = 8 * sizeof(int);
 
             for(ii = 0; ii < node_size; ii++) {
               for(jj = 0; jj < 8 * sizeof(int); jj++) {
@@ -874,7 +876,7 @@ void make_gtrans(GState *s) { /* creates all the transitions from a state */
     if(p == prod)
       break;
     p->next();
-    if ((postpone && in_set(INFp_nodes, p->astate)) && 
+    if ((postpone && in_set(INFp_nodes, p->astate)) &&
         (postpone == 2 || !in_set(UXp_nodes, p->astate))) {
       p->merge_to_prod(p->nxt, p->astate);
     } else {
@@ -892,7 +894,7 @@ void make_gtrans(GState *s) { /* creates all the transitions from a state */
       p = p->prv;
     }
   }
-  
+
   tfree(list); /* free memory */
   while(prod->nxt != prod) {
     AProd *p = prod->nxt;
@@ -913,7 +915,7 @@ void make_gtrans(GState *s) { /* creates all the transitions from a state */
         s1->prv = (GState *)0;
       return;
     }
-    
+
     gstates->trans = s->trans;
     s1 = gstates->nxt;
     while(!all_gtrans_match(s, s1, 0))
@@ -952,7 +954,7 @@ void reverse_print_generalized(GState *s) /* dumps the generalized Buchi automat
 
   std::map<GState*, std::map<cset, bdd>, GStateComp>::iterator t;
   std::map<cset, bdd>::iterator t2;
-  
+
   fprintf(tl_out, "state %i (", s->id);
   s->nodes_set->print();
   fprintf(tl_out, ") : %i\n", s->incoming);
@@ -989,17 +991,17 @@ void print_tgba_acc(int i) {
 void print_tgba_acc_set(const cset& set) {
   int* list = set.to_list();
   int i;
-  
+
   for(i = 1; i < list[0]; i++)
     print_tgba_acc(list[i]);
-  
+
   tfree(list);
 }
 
 void print_tgba_state_name(const cset* set, bool is_hoaf) {
   int* list = set->to_list();
   int i;
-  
+
   if (list[0] <= 1) {
     fprintf(tl_out, (is_hoaf ? "\"t\"" : "\"1\""));
   } else {
@@ -1042,7 +1044,7 @@ void print_tgba_all_transitions_of(const GState* s) {
 void print_tgba() {
   int i;
   GState *s;
-  
+
   fprintf(tl_out, "acc =");
   for(i = 1; i < final[0]; i++) {
     print_tgba_acc(final[i]);
@@ -1065,7 +1067,7 @@ void print_tgba() {
   for(i = 0; i < init_size; i++) {
     if(init[i]) {
       print_tgba_all_transitions_of(init[i]);
-      init[i]->incoming = 1;      
+      init[i]->incoming = 1;
     }
   }
 
@@ -1135,7 +1137,7 @@ void print_generalized_hoaf(const std::string& name = "TGBA"){
   std::map<cset, bdd>::iterator t2;
   std::map<int, int> final2Int;
   std::map<GState*, int> gstate2Int;
-  
+
   gstate_count = 0;
   for(int i = 1; i < final[0]; i++) {
     final2Int[final[i]] = gstate_count++;
@@ -1227,7 +1229,7 @@ void mk_generalized()
           fprintf(tl_out, "%d, ", i);
     }
     fprintf(tl_out, "\n");
-    
+
     fprintf(tl_out, "UXp: ");
     for(i = 1; i < 24; i++) {
       if (in_set(UXp_nodes, i))
@@ -1280,7 +1282,7 @@ void mk_generalized()
       simplify_gtrans();
       if (tl_simp_scc) simplify_gscc();
     }
-    
+
     if(tl_verbose) {
       fprintf(tl_out, "Generalized Buchi automaton after simplification\n");
       if (tl_verbose == 1)
@@ -1290,7 +1292,7 @@ void mk_generalized()
       fprintf(tl_out, "\n");
     }
   }
-  
+
   if(tl_hoaf == 2) {
     print_generalized_hoaf();
     tfree(label);
@@ -1300,4 +1302,3 @@ void mk_generalized()
   }
   tfree(predecessors);
 }
-  

@@ -4,9 +4,8 @@
 /* Copyright (c) 2001  Denis Oddoux                                       */
 /* Modified by Paul Gastin, LSV, France                                   */
 /* Copyright (c) 2007  Paul Gastin                                        */
-/* Modified by Tomas Babiak, FI MU, Brno, Czech Republic                   */
+/* Modified by Tomas Babiak, FI MU, Brno, Czech Republic                  */
 /* Copyright (c) 2012  Tomas Babiak                                       */
-/*
 /*                                                                        */
 /* This program is free software; you can redistribute it and/or modify   */
 /* it under the terms of the GNU General Public License as published by   */

@@ -469,12 +469,6 @@ std::map<cset, ATrans*> *build_alternating(Node *p) /* builds an alternating aut
               }
             }
           }
-/*        } else {
-          tmp = dup_trans(t1->second);  /* q */
-/*          to = t1->first;
-          to.insert(node);  /* Xp && q */
-/*          result->insert(std::pair<cset, ATrans*>(to, tmp));
-        }*/
 
       tmp = dup_trans(t1->second);  /* q */
       to = t1->first;
@@ -1007,7 +1001,6 @@ t_mm_pair count_Z_explore_node(int node, bool is_must) {
   std::set<cset> must, may;
   t_mm_pair mm;
   std::set<cset> escapes; // I need this for Untils
-  int i;
 
   if (transition[node])
     for(t = transition[node]->begin(); t != transition[node]->end(); t++) {
@@ -1172,7 +1165,7 @@ std::set<cset> compute_Z_set() {
 }
 
 void oteckuj(int nodes_num) {
-  int i, ii, jj, node, mod = 8 * sizeof(int);
+  int ii, jj, node, mod = 8 * sizeof(int);
   Node *n;
   std::map<cset, ATrans*>::iterator t;
   std::queue<int> q;

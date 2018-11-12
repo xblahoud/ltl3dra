@@ -117,13 +117,13 @@ int next_level(const GenCond &cond, int level, int accept, int* f_list) /* compu
 {
   if (!cond.allowed)
     return -1;
-    
+
   if (level == -1)
     level = 0;
-  
+
   while ((level != accept) && cond.f_accepting[acc_to_pos[f_list[level + 1]]])
     level++;
-    
+
   return level;
 }
 
@@ -138,19 +138,19 @@ std::vector<int> next_levels(const GenCondMap_t& conds, const std::vector<int>& 
     int old_level = (old_levels[i] == accept_levels[i]) ? 0 : old_levels[i];
     levels[i] = next_level(conds.find(i+1)->second, old_level, accept_levels[i], finals_lists[i]);
   }
-  
+
   return levels;
 }
 
 void make_RAtrans(const RAstate *s) {
   std::map<DRAstate*, DRAtrans>::iterator t_i;
   std::map<GenCondMap_t, bdd>::iterator c_i;
-  
+
   for (t_i=s->d_state->trans->begin(); t_i!=s->d_state->trans->end(); t_i++) {
     for (c_i=t_i->second.conds_to_labels.begin(); c_i!=t_i->second.conds_to_labels.end(); c_i++) {
       std::vector<int> levels = next_levels(c_i->first, s->levels);
       RAstate* prod_to = new RAstate(t_i->first->id, levels, t_i->first);
-      
+
       RAstate* to = find_rastate(prod_to);
       s->insert_transition(c_i->second, to);
     }
@@ -174,7 +174,7 @@ bool ra_acceptance_match(RAstate *s1, RAstate *s2) {
       return false;
   }
 
-  return true;  
+  return true;
 }
 
 bool all_ratrans_match(RAstate *s1, RAstate *s2) {
@@ -182,10 +182,10 @@ bool all_ratrans_match(RAstate *s1, RAstate *s2) {
 
   if (s1->trans->size() != s2->trans->size())
     return false;
-    
+
   m_1 = s1->trans->begin();
   m_2 = s2->trans->begin();
-  
+
   for (; m_1 != s1->trans->end(); m_1++, m_2++) {
     if (m_1->first != m_2->first|| m_1->second != m_2->second)
       return false;
@@ -206,7 +206,7 @@ void remove_rastate(RAstate *s, RAstate *sub) {
   decrement_incoming(s->trans);
   delete s->trans;
   s->trans = (std::map<RAstate*, RAtrans>*) 0;
-  
+
   s->sub = sub;
   for (s_i = raRemoved.begin(); s_i != raRemoved.end(); s_i++)
     if ((*s_i)->sub == s)
@@ -222,10 +222,10 @@ void retarget_all_ratrans() {
 
   if (raRemoved.size() == 0)
     return;
-  
+
   if (!ra_init->trans)
     ra_init = ra_init->sub; // ra_init has been removed -> replace it
-    
+
   for (s_i = rastates.begin(); s_i != rastates.end(); s_i++) {
     trans = (*s_i)->trans;
     for (t_i = trans->begin(); t_i != trans->end(); ) {
@@ -256,9 +256,9 @@ void retarget_all_ratrans() {
       }
     }
   }
-  
+
   for (s_i = raRemoved.begin(); s_i != raRemoved.end(); s_i++) {
-    delete *s_i; 
+    delete *s_i;
   }
   raRemoved.clear();
 }
@@ -411,7 +411,7 @@ std::ostream& dra::operator<<(std::ostream &out, const RAtrans &t) {
   else
     bdd_allsat(t.label, allsatPrintHandler);
   out << " -> " << t.to->id << "\t";
-  
+
   return out;
 }
 */
@@ -451,7 +451,8 @@ void print_dra_hoaf_header(int states,
     std::cout << "\nacc-name: Rabin " << Zindex_to_hoaf.size();
     std::cout << "\nAcceptance: " << 2*Zindex_to_hoaf.size() << " ";
     if (Zindex_to_hoaf.size()>0) {
-      for(int i = 0; i < Zindex_to_hoaf.size();++i) {
+      std::map<int, std::pair<int, int> >::size_type i;
+      for(i = 0; i < Zindex_to_hoaf.size();++i) {
         if (i > 0)
           std::cout << " | ";
         std::cout << "(Fin(" << 2*i << ")&Inf(" << 2*i + 1 << "))";
@@ -486,7 +487,7 @@ void print_ra_hoaf(std::ostream &out, const std::string& name = "") {
     print_dra_hoaf_header(state_count,rastate2Int,Zindex_to_hoaf);
   }
   out << "\n--BODY--";
-  
+
   for(s_i=rastates.begin(); s_i!=rastates.end(); s_i++) {
 /*    out << "state " << (*s_i)->id << " : " << *(*s_i) << std::endl;*/
     out << "\nState: " << rastate2Int[*s_i] << " " << *(*s_i);
@@ -715,12 +716,13 @@ void print_ra_goal(std::ostream &out) {
       continue;
     out << "\t\t<AccPair>" << std::endl;
     out << "\t\t\t<F>" << std::endl;
-    for (int j = 0; j < acc[i].size();j++) {
+    std::vector<int>::size_type j;
+    for (j = 0; j < acc[i].size();j++) {
       out << "\t\t\t\t<StateID>" << acc[i][j] << "</StateID>" << std::endl;
     }
     out << "\t\t\t</F>" << std::endl;
     out << "\t\t\t<E>" << std::endl;
-    for (int j = 0; j < rej[i].size();j++) {
+    for (j = 0; j < rej[i].size();j++) {
       out << "\t\t\t\t<StateID>" << rej[i][j] << "</StateID>" << std::endl;
     }
     out << "\t\t\t</E>" << std::endl;
@@ -814,7 +816,7 @@ int get_acc_size() {
 |*                       Main method                                *|
 \********************************************************************/
 
-void mk_ra() 
+void mk_ra()
 {/* generates a Rabin automaton from the generalized Rabin automaton */
   levels_num = Z_set.size();
   accept_levels.resize(levels_num);
@@ -844,9 +846,9 @@ void mk_ra()
 
     make_RAtrans(ra);
   }
-  
+
   remove_redundant_ra_init();
-  
+
   if (tl_verbose && tl_simp_diff && !tl_dra_stats) {
     if (tl_verbose == 1) {
         std::cout << std::endl << std::endl << "DRA before simplification" << std::endl;
@@ -856,7 +858,7 @@ void mk_ra()
     print_ra_hoaf(std::cout, "DRA before simplification");
     }
   }
-  
+
   if(tl_simp_diff) {
     simplify_rastates();
     remove_redundant_ra_init();
