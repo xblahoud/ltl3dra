@@ -1,4 +1,4 @@
-version 0.2.8 (2018-11-12:
+version 0.2.8 (2018-11-12):
   -- compilation issues:
     fix most gcc warnings
 
