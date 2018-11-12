@@ -1,3 +1,7 @@
+version 0.2.8 (2018-11-12:
+  -- compilation issues:
+    fix most gcc warnings
+
 version 0.2.7 (2018-11-11):
   -- bux fixed:
     -- wrong type in ra.c caused compiling issues in new versions of GCC.
