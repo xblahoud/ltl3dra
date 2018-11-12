@@ -196,7 +196,7 @@ void free_gtrans(GTrans *t, GTrans *sentinel, int fly) {
     free_gtrans(t->nxt, sentinel, fly);
     if(fly) t->to->incoming--;
   }
-  t->label == bdd_false(); // Zamysliet sa
+  t->label = bdd_false(); // Zamysliet sa
   t->nxt = gtrans_list;
   gtrans_list = t;
 }
@@ -243,10 +243,10 @@ a_stats(void)
 			i, p, a, f);
 	}
 
-	printf("atrans\t%6d\t%6d\t%6d\n", 
+	printf("atrans\t%6d\t%6d\t%6d\n",
 	       apool, aallocs, afrees);
-	printf("gtrans\t%6d\t%6d\t%6d\n", 
+	printf("gtrans\t%6d\t%6d\t%6d\n",
 	       gpool, gallocs, gfrees);
-	printf("btrans\t%6d\t%6d\t%6d\n", 
+	printf("btrans\t%6d\t%6d\t%6d\n",
 	       bpool, ballocs, bfrees);
 }
