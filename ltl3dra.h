@@ -6,10 +6,12 @@
 /* Copyright (c) 2007  Paul Gastin                                        */
 /* Modified by Tomas Babiak, FI MU, Brno, Czech Republic                  */
 /* Copyright (c) 2012  Tomas Babiak                                       */
+/* Modified by Tomas Babiak and Frantisek Blahoudek, Brno, Czech Republic */
+/* Copyright (c) 2013  Tomas Babiak and Frantisek Blahoudek               */
 /*                                                                        */
 /* This program is free software; you can redistribute it and/or modify   */
 /* it under the terms of the GNU General Public License as published by   */
-/* the Free Software Foundation; either version 2 of the License, or      */
+/* the Free Software Foundation; either version 3 of the License, or      */
 /* (at your option) any later version.                                    */
 /*                                                                        */
 /* This program is distributed in the hope that it will be useful,        */
@@ -17,9 +19,8 @@
 /* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          */
 /* GNU General Public License for more details.                           */
 /*                                                                        */
-/* You should have received a copy of the GNU General Public License      */
-/* along with this program; if not, write to the Free Software            */
-/* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA*/
+/* GNU GPL is included in this distribution, in a file called 'LICENSE'.  */
+/* If not, see <https://www.gnu.org/licenses/>.                           */
 /*                                                                        */
 /* Based on the translation algorithm by Gastin and Oddoux,               */
 /* presented at the 13th International Conference on Computer Aided       */
