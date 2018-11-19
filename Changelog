@@ -1,3 +1,7 @@
+version 0.2.9 (2018-11-19):
+  -- license upgrade to GNU GPL 3.0
+  -- fix wrong license number
+
 version 0.2.8 (2018-11-12):
   -- compilation issues:
     fix most gcc warnings

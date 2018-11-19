@@ -41,7 +41,7 @@
 #include <map>
 
 /* Set LTL3DRA's version number */
-#define VERSION_NUM "0.2.7"
+#define VERSION_NUM "0.2.9"
 #define DRA
 
 class cset;
